@@ -102,7 +102,7 @@ void CWeaponPortalgun::Spawn( void )
 }
 
 //MyGamepedia: i'm not sure for what they added it, let it be optional
-ConVar	sv_weapon_vm_anim_reset_mode("sv_portalgun_toggle_prongs", "0",
+ConVar	sv_portalgun_toggle_prongs("sv_portalgun_toggle_prongs", "0",
 	FCVAR_REPLICATED,
 	"Toggle prongs on level transition or save load, 0 to prevent, 1 to toggle.",
 	true, 0, true, 1
@@ -120,7 +120,7 @@ void CWeaponPortalgun::Activate()
 	if ( pPlayer )
 	{
 		//todo: needs more tests i guess, I'm not sure if it's used just to play the anim
-		int iToggleProngs = sv_weapon_vm_anim_reset_mode.GetInt();
+		int iToggleProngs = sv_portalgun_toggle_prongs.GetInt();
 		if (iToggleProngs == 1)
 		{
 			CBaseEntity *pHeldObject = GetPlayerHeldEntity( pPlayer );
