@@ -43,6 +43,8 @@ CLIENTEFFECT_MATERIAL( "models/portals/portal_refract_2" )
 //CLIENTEFFECT_MATERIAL( "effects/flashlight001" ) //light transfers disabled indefinitely
 CLIENTEFFECT_REGISTER_END()
 
+CAutoInitFlatBasicPortalDrawingMaterials s_FlatBasicPortalDrawingMaterials;
+
 const FlatBasicPortalRenderingMaterials_t& CPortalRenderable_FlatBasic::m_Materials = s_FlatBasicPortalDrawingMaterials.m_Materials;
 
 

@@ -54,7 +54,7 @@ public:
 		Assert(m_Materials.m_pDepthDoubleViewMatrixVar != NULL);
 	}
 };
-static CAutoInitFlatBasicPortalDrawingMaterials s_FlatBasicPortalDrawingMaterials;
+extern CAutoInitFlatBasicPortalDrawingMaterials s_FlatBasicPortalDrawingMaterials;
 
 //As seen in "Portal"
 class CPortalRenderable_FlatBasic : public C_BaseAnimating, public CPortalRenderable
