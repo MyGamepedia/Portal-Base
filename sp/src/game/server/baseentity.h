@@ -941,6 +941,7 @@ public:
 	virtual bool	OnControls( CBaseEntity *pControls ) { return false; }
 	virtual bool	HasTarget( string_t targetname );
 	virtual	bool	IsPlayer( void ) const { return false; }
+	virtual	bool	IsBaseTank() const { return false; } //true for tanks
 	virtual bool	IsNetClient( void ) const { return false; }
 	virtual bool	IsTemplate( void ) { return false; }
 	virtual bool	IsBaseObject( void ) const { return false; }

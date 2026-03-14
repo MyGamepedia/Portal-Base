@@ -363,7 +363,7 @@ bool CWeaponPortalgun::Deploy( void )
 
 #ifndef CLIENT_DLL
 		//MyGamepedia: player don't drop objects when switches to portalgun, fix it here
-		if (pPlayer->GetUseEntity())
+		if (pPlayer->GetUseEntity() && pPlayer->GetUseEntity()->IsBaseTank() == false)
 			pPlayer->ForceDropOfCarriedPhysObjects(pPlayer->GetUseEntity());
 #endif
 
