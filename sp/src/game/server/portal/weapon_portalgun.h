@@ -62,6 +62,7 @@ public:
 	virtual void Activate();
 	void DoEffectBlast( bool bPortal2, int iPlacedBy, const Vector &ptStart, const Vector &ptFinalPos, const QAngle &qStartAngles, float fDelay );
 	virtual void OnPickedUp( CBaseCombatCharacter *pNewOwner );
+	virtual bool IsPortalGun() { return true; }
 
 	virtual bool ShouldDrawCrosshair( void );
 	float GetPortal1Placablity( void ) { return m_fCanPlacePortal1OnThisSurface; }
@@ -90,6 +91,8 @@ public:
 	virtual void Think( void );
 
 	void OpenProngs( bool bOpenProngs );
+
+	bool CanHolster(void);
 
 	void InputChargePortal1( inputdata_t &inputdata );
 	void InputChargePortal2( inputdata_t &inputdata );

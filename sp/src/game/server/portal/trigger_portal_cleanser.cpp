@@ -168,7 +168,10 @@ void CTriggerPortalCleanser::Touch( CBaseEntity *pOther )
 
 				if ( bFizzledPortal )
 				{
-					pPortalgun->SendWeaponAnim( ACT_VM_FIZZLE );
+					//MyGamepedia: Do not play fizzle anim if isn't active to prevent pg showing when is not active 
+					if (pPortalgun->GetOwner() && pPortalgun->GetOwner()->GetActiveWeapon() == pPortalgun)
+						pPortalgun->SendWeaponAnim( ACT_VM_FIZZLE );
+
 					pPortalgun->SetLastFiredPortal( 0 );
 					m_OnFizzle.FireOutput( pOther, this );
 					pPlayer->RumbleEffect( RUMBLE_RPG_MISSILE, 0, RUMBLE_FLAG_RESTART );

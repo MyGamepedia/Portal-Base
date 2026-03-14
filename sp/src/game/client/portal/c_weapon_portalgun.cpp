@@ -209,7 +209,10 @@ void C_WeaponPortalgun::StartEffects( void )
 {
 	int i;
 
-	CBaseEntity *pModelView = ( ( GetOwner() ) ? ( ToBasePlayer( GetOwner() )->GetViewModel() ) : ( 0 ) );
+	//MyGamepedia: check if I have valid owner and it helds me so i can create vm sprites on proper model, this also fixes crash for npcs
+	bool bVmSprites = (GetOwner() && GetOwner()->IsPlayer() && GetOwner()->GetActiveWeapon() == this);
+	CBaseEntity *pModelView = ((bVmSprites) ? (ToBasePlayer(GetOwner())->GetViewModel()) : (0));
+
 	CBaseEntity *pModelWorld = this;
 	
 	if ( !pModelView )

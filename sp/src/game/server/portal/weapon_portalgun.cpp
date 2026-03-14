@@ -101,6 +101,14 @@ void CWeaponPortalgun::Spawn( void )
 	}	
 }
 
+//MyGamepedia: i'm not sure for what they added it, let it be optional
+ConVar	sv_weapon_vm_anim_reset_mode("sv_portalgun_toggle_prongs", "0",
+	FCVAR_REPLICATED,
+	"Toggle prongs on level transition or save load, 0 to prevent, 1 to toggle.",
+	true, 0, true, 1
+);
+
+
 void CWeaponPortalgun::Activate()
 {
 	BaseClass::Activate();
@@ -111,9 +119,14 @@ void CWeaponPortalgun::Activate()
 
 	if ( pPlayer )
 	{
-		CBaseEntity *pHeldObject = GetPlayerHeldEntity( pPlayer );
-		OpenProngs( ( pHeldObject ) ? ( false ) : ( true ) );
-		OpenProngs( ( pHeldObject ) ? ( true ) : ( false ) );
+		//todo: needs more tests i guess, I'm not sure if it's used just to play the anim
+		int iToggleProngs = sv_weapon_vm_anim_reset_mode.GetInt();
+		if (iToggleProngs == 1)
+		{
+			CBaseEntity *pHeldObject = GetPlayerHeldEntity( pPlayer );
+			OpenProngs( ( pHeldObject ) ? ( false ) : ( true ) );
+			OpenProngs( ( pHeldObject ) ? ( true ) : ( false ) );
+		}
 
 		if( GameRules()->IsMultiplayer() )
 			m_iPortalLinkageGroupID = pPlayer->entindex();
@@ -128,6 +141,8 @@ void CWeaponPortalgun::Activate()
 
 void CWeaponPortalgun::OnPickedUp( CBaseCombatCharacter *pNewOwner )
 {
+	CreateSounds(); //MyGamepedia: fix holding sound not played if picked up in this way
+
 	if( GameRules()->IsMultiplayer() )
 	{
 		if( pNewOwner && pNewOwner->IsPlayer() )
@@ -318,6 +333,10 @@ void CWeaponPortalgun::Think( void )
 
 void CWeaponPortalgun::OpenProngs( bool bOpenProngs )
 {
+	//MyGamepedia: Do not run holding logic if is not active
+	if (!GetOwner() || (GetOwner()->GetActiveWeapon() != this))
+		return;
+
 	if ( m_bOpenProngs == bOpenProngs )
 	{
 		return;
@@ -326,7 +345,6 @@ void CWeaponPortalgun::OpenProngs( bool bOpenProngs )
 	m_bOpenProngs = bOpenProngs;
 
 	DoEffect( ( m_bOpenProngs ) ? ( EFFECT_HOLDING ) : ( EFFECT_READY ) );
-
 	SendWeaponAnim( ( m_bOpenProngs ) ? ( ACT_VM_PICKUP ) : ( ACT_VM_RELEASE ) );
 }
 
@@ -781,6 +799,19 @@ void CWeaponPortalgun::DoEffectNone( void )
 
 		controller.SoundChangeVolume( m_pMiniGravHoldSound, 0.0, 0.1 );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Don't hide if I'm holding something - MyGamepedia
+//-----------------------------------------------------------------------------
+bool CWeaponPortalgun::CanHolster(void)
+{
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+
+	if (pPlayer && pPlayer->GetUseEntity())
+		return false;
+
+	return BaseClass::CanHolster();
 }
 
 void CC_UpgradePortalGun( void )
