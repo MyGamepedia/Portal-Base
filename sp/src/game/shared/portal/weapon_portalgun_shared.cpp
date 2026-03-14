@@ -13,10 +13,6 @@
 
 #include "prop_portal_shared.h"
 
-#ifndef CLIENT_DLL
-#include "eventqueue.h"
-#endif
-
 #ifdef CLIENT_DLL
 	#define CWeaponPortalgun C_WeaponPortalgun
 #endif //#ifdef CLIENT_DLL
