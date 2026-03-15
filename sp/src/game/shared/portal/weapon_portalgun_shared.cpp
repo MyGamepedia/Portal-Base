@@ -339,6 +339,11 @@ bool CWeaponPortalgun::Holster( CBaseCombatWeapon *pSwitchingTo )
 	return BaseClass::Holster( pSwitchingTo );
 }
 
+//MyGamepedia: this added to prevent certain exploits
+ConVar sv_portalgun_deploy_mode("sv_portalgun_deploy_mode", "1",
+	FCVAR_REPLICATED,
+	"Set blue and orange portal shoot delay when portal device deployed, 0 to have zero delay, 1 to have animation duration delay.",
+	true, 0, true, 1);
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : Returns true on success, false on failure.
@@ -355,6 +360,13 @@ bool CWeaponPortalgun::Deploy( void )
 	if (GetOwner() && GetOwner()->IsPlayer())
 	{
 		CPortal_Player *pPlayer = assert_cast<CPortal_Player*>(GetOwner());
+
+#ifndef CLIENT_DLL
+		//MyGamepedia: player don't drop objects when switches to portalgun, fix it here
+		if (pPlayer->GetUseEntity() && pPlayer->GetUseEntity()->IsBaseTank() == false)
+			pPlayer->ForceDropOfCarriedPhysObjects(pPlayer->GetUseEntity());
+#endif
+
 		if (pPlayer->IsWeaponLowered() && allow_portalgun_lowering_anim->GetBool())
 		{
 			if (SelectWeightedSequence(ACT_VM_IDLE_LOWERED) != ACTIVITY_NOT_AVAILABLE)
@@ -376,13 +388,15 @@ bool CWeaponPortalgun::Deploy( void )
 	m_bLowered = false;
 	bool bReturn = CBaseCombatWeapon::Deploy(); //skip CBasePortalCombatWeapon, go straight to CBaseCombatWeapon
 
-	m_flNextSecondaryAttack = m_flNextPrimaryAttack = gpGlobals->curtime;
+	if (!sv_portalgun_deploy_mode.GetBool())
+		m_flNextSecondaryAttack = m_flNextPrimaryAttack = gpGlobals->curtime;
 
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 
 	if ( pOwner )
 	{
-		pOwner->SetNextAttack( gpGlobals->curtime );
+		if (!sv_portalgun_deploy_mode.GetBool())
+			pOwner->SetNextAttack( gpGlobals->curtime );
 
 #ifndef CLIENT_DLL
 		if( GameRules()->IsMultiplayer() )
@@ -484,7 +498,8 @@ void CWeaponPortalgun::OnRestore()
 
 	// Portalgun effects disappear through level transition, so
 	//  just recreate any effects here
-	if ( m_EffectState != EFFECT_NONE )
+	//MyGamepedia: Also check if i'm active to prevent wrong attach info taked from other weapon
+	if (m_EffectState != EFFECT_NONE && (GetOwner() && GetOwner()->GetActiveWeapon() == this))
 	{
 		DoEffect( m_EffectState, NULL );
 	}

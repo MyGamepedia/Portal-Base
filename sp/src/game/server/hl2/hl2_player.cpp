@@ -3163,6 +3163,12 @@ bool CHL2_Player::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 	return true;
 }
 
+//MyGamepedia: the same idea as with gravity gun
+ConVar sv_portalgun_fire_delay_prevents_pickup("sv_portalgun_fire_delay_prevents_pickup", "1",
+	FCVAR_REPLICATED,
+	"The player will not be able to pick up anything if portal device is under attack delay (caused by certain animations), 1 to enable.",
+	true, 0, true, 1);
+
 void CHL2_Player::PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize )
 {
 	// can't pick up what you're standing on
@@ -3179,8 +3185,13 @@ void CHL2_Player::PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize )
 		}
 		else
 		{
-			if (FClassnameIs(ActiveWeapon, "weapon_portalgun"))
+			if (ActiveWeapon->IsPortalGun())
 			{
+				//MyGamepedia: don't pick up if is not ready
+				if (sv_portalgun_fire_delay_prevents_pickup.GetBool() &&
+					(ActiveWeapon->m_flNextPrimaryAttack > gpGlobals->curtime || ActiveWeapon->m_flNextSecondaryAttack > gpGlobals->curtime))
+					return;
+
 				if (!CBasePlayer::CanPickupObject(pObject, max_lift_mass_portalgun.GetFloat(), max_lift_size_portalgun.GetFloat()))
 					return;
 			}

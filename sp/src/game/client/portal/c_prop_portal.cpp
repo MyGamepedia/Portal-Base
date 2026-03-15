@@ -21,6 +21,7 @@
 #include "tier1/KeyValues.h"
 #include "rendertexture.h"
 #include "prop_portal_shared.h"
+#include "portalrenderable_flatbasic.h"
 #include "particles_new.h"
 
 #include "c_portal_player.h"
@@ -539,9 +540,11 @@ void C_Prop_Portal::OnPreDataChanged( DataUpdateType_t updateType )
 	BaseClass::OnPreDataChanged( updateType );
 }
 
-//ConVar r_portal_light_innerangle( "r_portal_light_innerangle", "90.0", FCVAR_CLIENTDLL );
-//ConVar r_portal_light_outerangle( "r_portal_light_outerangle", "90.0", FCVAR_CLIENTDLL );
-//ConVar r_portal_light_forward( "r_portal_light_forward", "0.0", FCVAR_CLIENTDLL );
+//MyGamepedia: i think we better to have prt lights, this is a test feature
+ConVar cl_portal_emit_light_teleport("cl_portal_emit_light_teleport", "0", FCVAR_CLIENTDLL);
+ConVar r_portal_light_innerangle( "r_portal_light_innerangle", "90.0", FCVAR_CLIENTDLL );
+ConVar r_portal_light_outerangle( "r_portal_light_outerangle", "90.0", FCVAR_CLIENTDLL );
+ConVar r_portal_light_forward( "r_portal_light_forward", "0.0", FCVAR_CLIENTDLL );
 
 void C_Prop_Portal::OnDataChanged( DataUpdateType_t updateType )
 {
@@ -630,9 +633,10 @@ void C_Prop_Portal::OnDataChanged( DataUpdateType_t updateType )
 				render->TouchLight( pFakeLight );
 			}
 
-			if( pRemote ) //now, see if we need to fake light coming through a portal
+			//todo: add proper logic when convar is off after portals with fake light spawned
+			//
+			if(pRemote && cl_portal_emit_light_teleport.GetBool()) //now, see if we need to fake light coming through a portal
 			{
-#if 0
 				Vector vLightAtRemotePortal( vec3_origin ), vLightAtLocalPortal( vec3_origin );
 
 				if( pRemote ) //get lighting at remote portal
@@ -642,7 +646,7 @@ void C_Prop_Portal::OnDataChanged( DataUpdateType_t updateType )
 
 				//now get lighting at the local portal
 				{
-					engine->ComputeLighting( ptOrigin, NULL, false, vLightAtLocalPortal, NULL );
+					engine->ComputeLighting( m_ptOrigin, NULL, false, vLightAtLocalPortal, NULL );
 				}
 
 				//Vector vLightDiff = vLightAtLocalPortal - vLightAtRemotePortal;
@@ -665,8 +669,8 @@ void C_Prop_Portal::OnDataChanged( DataUpdateType_t updateType )
 						else
 						{
 							vColor = vLightAtRemotePortal;
-							vLightForward = vForward;
-							ptLightOrigin = ptOrigin;
+							vLightForward = m_vForward;
+							ptLightOrigin = m_ptOrigin;
 						}
 
 						//clamp color values
@@ -742,7 +746,7 @@ void C_Prop_Portal::OnDataChanged( DataUpdateType_t updateType )
 						state.m_NearZ = 4.0f;
 						state.m_FarZ = 500.0f;
 						state.m_nSpotlightTextureFrame = 0;
-						state.m_pSpotlightTexture = PortalDrawingMaterials::PortalLightTransfer_ShadowTexture;
+						state.m_pSpotlightTexture = s_FlatBasicPortalDrawingMaterials.m_Materials.m_PortalLightTransfer_ShadowTexture;
 						state.m_fConstantAtten = 0.0f;
 						state.m_fLinearAtten = 500.0f;
 						state.m_fQuadraticAtten = 0.0f;			
@@ -788,7 +792,6 @@ void C_Prop_Portal::OnDataChanged( DataUpdateType_t updateType )
 					else
 						TransformedLighting.m_LightShadowHandle = ShadowHandle;					
 				}
-#endif
 			}
 		}
 	}

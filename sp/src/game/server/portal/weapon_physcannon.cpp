@@ -1135,9 +1135,9 @@ void CPlayerPickupController::Init( CBasePlayer *pPlayer, CBaseEntity *pObject )
 	if ( pPlayer->GetActiveWeapon() )
 	{
 		// Don't holster the portalgun
-		if ( FClassnameIs( pPlayer->GetActiveWeapon(), "weapon_portalgun" ) )
+		if (pPlayer->GetActiveWeapon()->IsPortalGun())
 		{
-			CWeaponPortalgun *pPortalGun = (CWeaponPortalgun*)(pPlayer->GetActiveWeapon());
+			CWeaponPortalgun *pPortalGun = static_cast<CWeaponPortalgun*>(pPlayer->GetActiveWeapon());
 			pPortalGun->OpenProngs( true );
 		}
 		else
@@ -1226,10 +1226,10 @@ void CPlayerPickupController::Shutdown( bool bThrown )
 		{
 			if ( m_pPlayer->GetActiveWeapon() )
 			{
-				if ( FClassnameIs( m_pPlayer->GetActiveWeapon(), "weapon_portalgun" ) )
+				if (m_pPlayer->GetActiveWeapon()->IsPortalGun())
 				{
 					m_pPlayer->SetNextAttack( gpGlobals->curtime + 0.5f );
-					CWeaponPortalgun *pPortalGun = (CWeaponPortalgun*)(m_pPlayer->GetActiveWeapon());
+					CWeaponPortalgun *pPortalGun = static_cast<CWeaponPortalgun*>(m_pPlayer->GetActiveWeapon());
 					pPortalGun->DelayAttack( 0.5f );
 					pPortalGun->OpenProngs( false );
 				}

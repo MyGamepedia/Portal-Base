@@ -946,7 +946,8 @@ CPhysicsShadowClone *CPhysicsShadowClone::CreateShadowClone( IPhysicsEnvironment
 	if( pClonedEntity->GetSolid() == SOLID_BSP )
 		return NULL;
 
-	if( pClonedEntity->GetSolidFlags() & (FSOLID_NOT_SOLID | FSOLID_TRIGGER) )
+	if (pClonedEntity->GetSolidFlags() & (FSOLID_NOT_SOLID | FSOLID_TRIGGER))
+	//if( pClonedEntity->GetSolidFlags() & (FSOLID_NOT_SOLID) ) //MyGamepedia: Removed FSOLID_TRIGGER to allow CItem teleport (doesn't work)
 		return NULL;
 
 	if( pClonedEntity->GetFlags() & (FL_WORLDBRUSH | FL_STATICPROP) )
