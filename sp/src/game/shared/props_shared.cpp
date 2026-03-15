@@ -1572,8 +1572,12 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 				breakModel.fadeMaxDist = 0.0f;
 				breakModel.burstScale = params.defBurstScale;
 
-				breakModel.collisionGroup = COLLISION_GROUP_DEBRIS; 
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+				breakModel.collisionGroup = COLLISION_GROUP_DEBRIS;
+#else
 				breakModel.collisionGroup = COLLISION_GROUP_INTERACTIVE_DEBRIS;
+#endif
+
 				breakModel.isRagdoll = false;
 				breakModel.isMotionDisabled = false;
 				breakModel.placementName[0] = 0;

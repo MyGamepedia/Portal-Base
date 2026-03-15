@@ -80,7 +80,7 @@ void CTriggerPortalCleanser::Spawn( void )
 // Used to avoid higher level functions on a disolving entity, which should be inert
 // and not react the way it used to (touches, etc).
 // Uses simple physics entities declared in physobj.cpp
-CBaseAnimating* ConvertToSimpleProp ( CBaseEntity* pEnt )
+CBaseEntity* ConvertToSimpleProp ( CBaseEntity* pEnt )
 {
 	CBaseEntity *pRetVal = NULL;
 	int modelindex = pEnt->GetModelIndex();
@@ -100,7 +100,7 @@ CBaseAnimating* ConvertToSimpleProp ( CBaseEntity* pEnt )
 	pRetVal->Spawn();
 	pRetVal->VPhysicsInitNormal( SOLID_VPHYSICS, 0, false );
 	
-	return static_cast<CBaseAnimating*>(pRetVal);
+	return pRetVal;
 }
 
 
@@ -232,16 +232,24 @@ void CTriggerPortalCleanser::Touch( CBaseEntity *pOther )
 		}
 
 		// Swap object with an disolving physics model to avoid touch logic
-		CBaseAnimating *pDisolvingObj = ConvertToSimpleProp( pBaseAnimating );
+		CBaseEntity *pDisolvingObj = ConvertToSimpleProp( pBaseAnimating );
 		if ( pDisolvingObj )
 		{
 			//mygamepedia: fix headcrab disappear on zombie, we way need a big rework (creating new ent means losing lots of data)
 			//i also added some other visual data here
-			pDisolvingObj->m_nBody = pBaseAnimating->m_nBody;
 			pDisolvingObj->m_clrRender = pBaseAnimating->m_clrRender;
 			pDisolvingObj->SetEffects(pBaseAnimating->GetEffects());
-			pDisolvingObj->m_flModelScale = pBaseAnimating->m_flModelScale;
-			pDisolvingObj->m_nSkin = pBaseAnimating->m_nSkin;
+
+			int modelindex = pDisolvingObj->GetModelIndex();
+			const model_t* model = modelinfo->GetModel(modelindex);
+			if (model && modelinfo->GetModelType(model) == mod_studio)
+			{
+				CBaseAnimating* pAnimatingDisolving = static_cast<CBaseAnimating*>(pDisolvingObj);
+
+				pAnimatingDisolving->m_nBody = pBaseAnimating->m_nBody;
+				pAnimatingDisolving->m_flModelScale = pBaseAnimating->m_flModelScale;
+				pAnimatingDisolving->m_nSkin = pBaseAnimating->m_nSkin;
+			}
 
 			// Remove old prop, transfer name and children to the new simple prop
 			pDisolvingObj->SetName( pBaseAnimating->GetEntityName() );

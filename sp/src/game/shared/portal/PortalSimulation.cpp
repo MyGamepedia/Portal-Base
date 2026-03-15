@@ -2462,11 +2462,19 @@ void CPortalSimulator::PrePhysFrame( void )
 void CPortalSimulator::PostPhysFrame(void)
 {
 	//mygamepedia: check all clients so portals can work in mp
-	for (int i = 1; i < gpGlobals->maxClients; i++)
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		if (g_bPlayerIsInSimulator[i])
 		{
 			CPortal_Player* pPlayer = dynamic_cast<CPortal_Player*>(UTIL_PlayerByIndex(i));
+
+			if (!pPlayer)
+			{
+				g_bPlayerIsInSimulator[i] = false;
+				continue;
+			}
+
+			CProp_Portal* pTouchedPortal = pPlayer->m_hPortalEnvironment.Get();
 			CProp_Portal* pTouchedPortal = pPlayer->m_hPortalEnvironment.Get();
 			CPortalSimulator* pSim = GetSimulatorThatOwnsEntity(pPlayer);
 			if (pTouchedPortal && pSim && (pTouchedPortal->m_PortalSimulator.GetPortalSimulatorGUID() != pSim->GetPortalSimulatorGUID()))
