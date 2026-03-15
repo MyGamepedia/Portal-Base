@@ -384,6 +384,28 @@ void CMissile::Explode( void )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Stop looping sounds when removed - mygamepedia
+//-----------------------------------------------------------------------------
+void CMissile::UpdateOnRemove()
+{
+	if (m_hRocketTrail)
+	{
+		m_hRocketTrail->SetLifetime(0.1f);
+		m_hRocketTrail = NULL;
+	}
+
+	if (m_hOwner != NULL)
+	{
+		m_hOwner->NotifyRocketDied();
+		m_hOwner = NULL;
+	}
+
+	StopSound("Missile.Ignite");
+
+	BaseClass::UpdateOnRemove();
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pOther - 
 //-----------------------------------------------------------------------------

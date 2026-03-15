@@ -46,6 +46,7 @@
 #include "gamestats.h"
 // NVNT haptic utils
 #include "haptics/haptic_utils.h"
+#include "npc_security_camera.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -2085,6 +2086,15 @@ void CWeaponPhysCannon::PuntVPhysics( CBaseEntity *pEntity, const Vector &vecFor
 
 	// Don't allow the gun to regrab a thrown object!!
 	m_flNextSecondaryAttack = m_flNextPrimaryAttack = gpGlobals->curtime + 0.5f;
+
+	if (pEntity->IsSecurityCamera())
+	{
+		if (static_cast<CNPC_SecurityCamera*>(pEntity)->m_bDetached == false)
+		{
+			variant_t tmpvar;
+			pEntity->AcceptInput("Ragdoll", this, this, tmpvar, 0);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------

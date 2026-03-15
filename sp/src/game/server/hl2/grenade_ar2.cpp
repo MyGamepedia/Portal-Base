@@ -241,6 +241,19 @@ void CGrenadeAR2::Detonate(void)
 	UTIL_Remove( this );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Remove smoke trail when needed - MyGamepedia
+//-----------------------------------------------------------------------------
+void CGrenadeAR2::UpdateOnRemove()
+{
+	if (m_hSmokeTrail)
+	{
+		m_hSmokeTrail->SetLifetime(0.01f);
+	}
+
+	BaseClass::UpdateOnRemove();
+}
+
 void CGrenadeAR2::Precache( void )
 {
 	PrecacheModel("models/Weapons/ar2_grenade.mdl"); 

@@ -352,7 +352,7 @@ bool CWeaponPortalgun::Deploy( void )
 {
 	DoEffect( EFFECT_READY );
 
-	ConVar* allow_portalgun_lowering_anim = cvar->FindVar("allow_portalgun_lowering_anim");
+	ConVarRef lowering_anim("allow_portalgun_lowering_anim");
 
 	// moved this here from CBasePortalCombatWeapon so lowering animation can be overriden
 	// If we should be lowered, deploy in the lowered position
@@ -367,7 +367,7 @@ bool CWeaponPortalgun::Deploy( void )
 			pPlayer->ForceDropOfCarriedPhysObjects(pPlayer->GetUseEntity());
 #endif
 
-		if (pPlayer->IsWeaponLowered() && allow_portalgun_lowering_anim->GetBool())
+		if (pPlayer->IsWeaponLowered() && lowering_anim.GetBool())
 		{
 			if (SelectWeightedSequence(ACT_VM_IDLE_LOWERED) != ACTIVITY_NOT_AVAILABLE)
 			{

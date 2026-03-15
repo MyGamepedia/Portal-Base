@@ -47,6 +47,8 @@
 
 #define DOOR_HARDWARE_GROUP 1
 
+#define PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+
 // Any barrel farther away than this is ignited rather than exploded.
 #define PROP_EXPLOSION_IGNITE_RADIUS	32.0f
 
@@ -651,7 +653,15 @@ void CBreakableProp::StickAtPosition( const Vector &stickPosition, const Vector 
 
 	VPhysicsGetObject()->EnableMotion( false );
 	AddSpawnFlags( SF_PHYSPROP_ENABLE_ON_PHYSCANNON );
-	SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+
+#ifndef	PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+	SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+#else
+	SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
+#endif
+
+	//mygamepedia: HACK!? this is unused anyway, this help us to make sure that this is a sticky prop
+	SetFriction(1.01);
 }
 
 //-----------------------------------------------------------------------------
@@ -2499,7 +2509,11 @@ void CPhysicsProp::Spawn( )
 
 	if ( HasSpawnFlags( SF_PHYSPROP_DEBRIS ) || HasInteraction( PROPINTER_PHYSGUN_CREATE_FLARE ) )
 	{
-		SetCollisionGroup( HasSpawnFlags( SF_PHYSPROP_FORCE_TOUCH_TRIGGERS ) ? COLLISION_GROUP_DEBRIS_TRIGGER : COLLISION_GROUP_DEBRIS );
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+		SetCollisionGroup(HasSpawnFlags(SF_PHYSPROP_FORCE_TOUCH_TRIGGERS) ? COLLISION_GROUP_DEBRIS_TRIGGER : COLLISION_GROUP_DEBRIS);
+#else
+		SetCollisionGroup(HasSpawnFlags(SF_PHYSPROP_FORCE_TOUCH_TRIGGERS) ? COLLISION_GROUP_DEBRIS_TRIGGER : COLLISION_GROUP_INTERACTIVE_DEBRIS);
+#endif
 	}
 
 	if ( HasSpawnFlags( SF_PHYSPROP_NO_ROTORWASH_PUSH ) )

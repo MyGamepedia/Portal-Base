@@ -24,6 +24,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#define PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
@@ -177,7 +179,13 @@ void CRagdollProp::Spawn( void )
 	BaseClass::SetupBones( pBoneToWorld, BONE_USED_BY_ANYTHING ); // FIXME: shouldn't this be a subset of the bones
 	// this is useless info after the initial conditions are set
 	SetAbsAngles( vec3_angle );
+
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
 	int collisionGroup = (m_spawnflags & SF_RAGDOLLPROP_DEBRIS) ? COLLISION_GROUP_DEBRIS : COLLISION_GROUP_NONE;
+#else
+	int collisionGroup = (m_spawnflags & SF_RAGDOLLPROP_DEBRIS) ? COLLISION_GROUP_INTERACTIVE_DEBRIS : COLLISION_GROUP_NONE;
+#endif
+
 	bool bWake = (m_spawnflags & SF_RAGDOLLPROP_STARTASLEEP) ? false : true;
 	InitRagdoll( vec3_origin, 0, vec3_origin, pBoneToWorld, pBoneToWorld, 0, collisionGroup, true, bWake );
 	m_lastUpdateTickCount = 0;
@@ -763,7 +771,12 @@ void CRagdollProp::InitRagdoll( const Vector &forceVector, int forceBone, const 
 
 void CRagdollProp::SetDebrisThink()
 {
-	SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+	SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+#else
+	SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
+#endif
+
 	RecheckCollisionFilter();
 }
 
@@ -1012,7 +1025,11 @@ void CRagdollProp::VPhysicsUpdate( IPhysicsObject *pPhysics )
 	// Interactive debris converts back to debris when it comes to rest
 	if ( m_allAsleep && GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS )
 	{
-		SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+		SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+#else
+		SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
+#endif
 		RecheckCollisionFilter();
 		SetContextThink( NULL, gpGlobals->curtime, s_pDebrisContext );
 	}
@@ -1479,7 +1496,12 @@ void CRagdollPropAttached::Detach()
 	}
 
 	// Go non-solid
-	SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+	SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+#else
+	SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
+#endif
+
 	RecheckCollisionFilter();
 }
 

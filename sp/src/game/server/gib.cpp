@@ -19,6 +19,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#define PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+
 extern Vector			g_vecAttackDir;		// In globals.cpp
 
 BEGIN_DATADESC( CGib )
@@ -254,7 +256,12 @@ void CGib::InitGib( CBaseEntity *pVictim, float fMinVelocity, float fMaxVelocity
 			SetAbsVelocity( vecNewVelocity );
 		}
 	
-		SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+		SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+#else
+		SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
+#endif
+		
 	}
 
 	LimitVelocity();
@@ -595,7 +602,12 @@ void CGib::Spawn( const char *szGibModel )
 	m_takedamage = DAMAGE_EVENTS_ONLY;
 	SetSolid( SOLID_BBOX );
 	AddSolidFlags( FSOLID_NOT_STANDABLE );
-	SetCollisionGroup( COLLISION_GROUP_DEBRIS );
+
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+	SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+#else
+	SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
+#endif
 
 	SetModel( szGibModel );
 

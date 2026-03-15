@@ -44,6 +44,7 @@ public:
 	void	Precache( void );
 	void	MissileTouch( CBaseEntity *pOther );
 	void	Explode( void );
+	void	UpdateOnRemove(); //MyGamepedia: remove looping sounds when deleted
 	void	ShotDown( void );
 	void	AccelerateThink( void );
 	void	AugerThink( void );

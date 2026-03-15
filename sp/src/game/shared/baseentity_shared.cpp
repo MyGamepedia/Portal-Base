@@ -1131,6 +1131,13 @@ int CheckEntityVelocity( Vector &v )
 	return -1;
 }
 
+//MyGamepedia: this prevents debris not working with portals after a while 
+ConVar	sv_portalbase_no_interactive_debris_reset("sv_portalbase_no_interactive_debris_reset", "1",
+	FCVAR_REPLICATED,
+	"Don't convert objects with COLLISION_GROUP_INTERACTIVE_DEBRIS to COLLISION_GROUP_DEBRIS while they are not waked.",
+	true, 0, true, 1
+);
+
 //-----------------------------------------------------------------------------
 // Purpose: My physics object has been updated, react or extract data
 //-----------------------------------------------------------------------------
@@ -1181,7 +1188,8 @@ void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 			SetAbsAngles( angles );
 
 			// Interactive debris converts back to debris when it comes to rest
-			if ( pPhysics->IsAsleep() && GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS )
+			if (pPhysics->IsAsleep() && GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS 
+				&& !sv_portalbase_no_interactive_debris_reset.GetBool())
 			{
 				SetCollisionGroup( COLLISION_GROUP_DEBRIS );
 			}
@@ -2483,6 +2491,9 @@ void CBaseEntity::ApplyLocalAngularVelocityImpulse( const AngularImpulse &angImp
 
 void CBaseEntity::SetCollisionGroup( int collisionGroup )
 {
+//	if (collisionGroup == COLLISION_GROUP_DEBRIS)
+//		Msg("BOBA!\n");
+
 	if ( (int)m_CollisionGroup != collisionGroup )
 	{
 		m_CollisionGroup = collisionGroup;

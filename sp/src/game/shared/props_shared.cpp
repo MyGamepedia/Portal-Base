@@ -21,6 +21,9 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+//mygamepedia: this group can work with portals and triggers when debri appears, not hard tested, disable if breaks something
+#define PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
+
 ConVar sv_pushaway_clientside_size( "sv_pushaway_clientside_size", "15", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "Minimum size of pushback objects" );
 ConVar props_break_max_pieces( "props_break_max_pieces", "-1", 0, "Maximum prop breakable piece count (-1 = model default)" );
 ConVar props_break_max_pieces_perframe( "props_break_max_pieces_perframe", "-1", FCVAR_REPLICATED, "Maximum prop breakable piece count per frame (-1 = model default)" );
@@ -559,7 +562,11 @@ public:
 			pModel->fadeTime = atof(pValue);
 			if ( !m_wroteCollisionGroup )
 			{
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
 				pModel->collisionGroup = COLLISION_GROUP_DEBRIS;
+#else
+				pModel->collisionGroup = COLLISION_GROUP_INTERACTIVE_DEBRIS;
+#endif
 			}
 		}
 		else if ( !strcmpi( pKey, "fademindist" ) )
@@ -572,7 +579,13 @@ public:
 		}
 		else if ( !strcmpi( pKey, "debris" ) )
 		{
+
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
 			pModel->collisionGroup = atoi(pValue) > 0 ? COLLISION_GROUP_DEBRIS : COLLISION_GROUP_INTERACTIVE;
+#else
+			pModel->collisionGroup = atoi(pValue) > 0 ? COLLISION_GROUP_INTERACTIVE_DEBRIS : COLLISION_GROUP_INTERACTIVE;
+#endif
+
 			m_wroteCollisionGroup = true;
 		}
 		else if ( !strcmpi( pKey, "burst" ) )
@@ -1140,7 +1153,13 @@ void PropBreakableCreateAll( int modelindex, IPhysicsObject *pPhysics, const bre
 				breakModel.fadeMinDist = 0.0f;
 				breakModel.fadeMaxDist = 0.0f;
 				breakModel.burstScale = params.defBurstScale;
+
+#ifndef PORTALBASE_USE_COLLISION_GROUP_INTERACTIVE_DEBRIS
 				breakModel.collisionGroup = COLLISION_GROUP_DEBRIS;
+#else
+				breakModel.collisionGroup = COLLISION_GROUP_INTERACTIVE_DEBRIS;
+#endif
+
 				breakModel.isRagdoll = false;
 				breakModel.isMotionDisabled = false;
 				breakModel.placementName[0] = 0;
@@ -1552,7 +1571,9 @@ CBaseEntity *CreateGibsFromList( CUtlVector<breakmodel_t> &list, int modelindex,
 				breakModel.fadeMinDist = 0.0f;
 				breakModel.fadeMaxDist = 0.0f;
 				breakModel.burstScale = params.defBurstScale;
-				breakModel.collisionGroup = COLLISION_GROUP_DEBRIS;
+
+				breakModel.collisionGroup = COLLISION_GROUP_DEBRIS; 
+				breakModel.collisionGroup = COLLISION_GROUP_INTERACTIVE_DEBRIS;
 				breakModel.isRagdoll = false;
 				breakModel.isMotionDisabled = false;
 				breakModel.placementName[0] = 0;

@@ -42,7 +42,7 @@
 #define MINIMUM_FLOOR_PORTAL_EXIT_VELOCITY 50.0f
 #define MINIMUM_FLOOR_TO_FLOOR_PORTAL_EXIT_VELOCITY 225.0f
 #define MINIMUM_FLOOR_PORTAL_EXIT_VELOCITY_PLAYER 300.0f
-#define MAXIMUM_PORTAL_EXIT_VELOCITY 1000.0f
+#define MAXIMUM_PORTAL_EXIT_VELOCITY 1500.0f //mygamepedia: changed from 1000, this is grav gun's maxforce (def) val, also works with sticky props 
 
 CCallQueue *GetPortalCallQueue();
 
@@ -1671,15 +1671,29 @@ void CProp_Portal::WakeNearbyEntities( void )
 				{
 					IPhysicsObject *pPhysicsObject = pEntity->VPhysicsGetObject();
 
-					if ( pPhysicsObject && pPhysicsObject->IsMoveable() )
+					if (!pPhysicsObject)
+						continue;
+
+					if (pPhysicsObject->IsMoveable())
 					{
 						pPhysicsObject->Wake();
 
 						// If the target is debris, convert it to non-debris
-						if ( pEntity->GetCollisionGroup() == COLLISION_GROUP_DEBRIS )
+						if (pEntity->GetCollisionGroup() == COLLISION_GROUP_DEBRIS)
 						{
 							// Interactive debris converts back to debris when it comes to rest
-							pEntity->SetCollisionGroup( COLLISION_GROUP_INTERACTIVE_DEBRIS );
+							pEntity->SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
+						}
+					}
+					else
+					{
+						//mygamepedia: if has that group and used this flag and marked - this is a sticky prop
+						//so now we don't stucked prop in wall even under portal
+						if (pEntity->GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS && 
+							pEntity->HasSpawnFlags(SF_PHYSPROP_ENABLE_ON_PHYSCANNON) && pEntity->GetFriction() > 1.00f)
+						{
+							variant_t tmpvar;
+							pEntity->AcceptInput("EnableMotion", this, this, tmpvar, 0);
 						}
 					}
 				}

@@ -3,6 +3,7 @@
 // Purpose: 
 //
 // $NoKeywords: $
+// $NoKeywords: $
 //=============================================================================//
 
 #ifndef BASEENTITY_H
@@ -941,6 +942,7 @@ public:
 	virtual bool	OnControls( CBaseEntity *pControls ) { return false; }
 	virtual bool	HasTarget( string_t targetname );
 	virtual	bool	IsPlayer( void ) const { return false; }
+	virtual	bool	IsSecurityCamera() const { return false; } //true for sec camera
 	virtual	bool	IsBaseTank() const { return false; } //true for tanks
 	virtual bool	IsNetClient( void ) const { return false; }
 	virtual bool	IsTemplate( void ) { return false; }

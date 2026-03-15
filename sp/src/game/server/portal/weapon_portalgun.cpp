@@ -103,7 +103,7 @@ void CWeaponPortalgun::Spawn( void )
 
 //MyGamepedia: i'm not sure for what they added it, let it be optional
 ConVar	sv_portalgun_toggle_prongs("sv_portalgun_toggle_prongs", "0",
-	FCVAR_REPLICATED,
+	FCVAR_NONE,
 	"Toggle prongs on level transition or save load, 0 to prevent, 1 to toggle.",
 	true, 0, true, 1
 );
@@ -808,7 +808,7 @@ bool CWeaponPortalgun::CanHolster(void)
 {
 	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
 
-	if (pPlayer && pPlayer->GetUseEntity())
+	if (pPlayer && pPlayer->GetUseEntity() && pPlayer->GetUseEntity()->IsBaseTank() == false)
 		return false;
 
 	return BaseClass::CanHolster();

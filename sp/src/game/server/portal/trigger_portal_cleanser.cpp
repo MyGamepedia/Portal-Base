@@ -30,6 +30,7 @@ static char *g_pszPortalNonCleansable[] =
 	"env_ghostanimating",
 	"physicsshadowclone",
 	"prop_energy_ball",
+	"prop_combine_ball", //mygamepedia: used by player and combines, the way how it looks is weird, just filter it here
 	NULL,
 };
 
@@ -79,7 +80,7 @@ void CTriggerPortalCleanser::Spawn( void )
 // Used to avoid higher level functions on a disolving entity, which should be inert
 // and not react the way it used to (touches, etc).
 // Uses simple physics entities declared in physobj.cpp
-CBaseEntity* ConvertToSimpleProp ( CBaseEntity* pEnt )
+CBaseAnimating* ConvertToSimpleProp ( CBaseEntity* pEnt )
 {
 	CBaseEntity *pRetVal = NULL;
 	int modelindex = pEnt->GetModelIndex();
@@ -99,7 +100,7 @@ CBaseEntity* ConvertToSimpleProp ( CBaseEntity* pEnt )
 	pRetVal->Spawn();
 	pRetVal->VPhysicsInitNormal( SOLID_VPHYSICS, 0, false );
 	
-	return pRetVal;
+	return static_cast<CBaseAnimating*>(pRetVal);
 }
 
 
@@ -231,9 +232,17 @@ void CTriggerPortalCleanser::Touch( CBaseEntity *pOther )
 		}
 
 		// Swap object with an disolving physics model to avoid touch logic
-		CBaseEntity *pDisolvingObj = ConvertToSimpleProp( pBaseAnimating );
+		CBaseAnimating *pDisolvingObj = ConvertToSimpleProp( pBaseAnimating );
 		if ( pDisolvingObj )
 		{
+			//mygamepedia: fix headcrab disappear on zombie, we way need a big rework (creating new ent means losing lots of data)
+			//i also added some other visual data here
+			pDisolvingObj->m_nBody = pBaseAnimating->m_nBody;
+			pDisolvingObj->m_clrRender = pBaseAnimating->m_clrRender;
+			pDisolvingObj->SetEffects(pBaseAnimating->GetEffects());
+			pDisolvingObj->m_flModelScale = pBaseAnimating->m_flModelScale;
+			pDisolvingObj->m_nSkin = pBaseAnimating->m_nSkin;
+
 			// Remove old prop, transfer name and children to the new simple prop
 			pDisolvingObj->SetName( pBaseAnimating->GetEntityName() );
 			UTIL_TransferPoseParameters( pBaseAnimating, pDisolvingObj );

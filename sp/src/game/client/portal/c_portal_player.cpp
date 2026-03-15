@@ -687,9 +687,19 @@ void C_Portal_Player::CalcPortalView( Vector &eyeOrigin, QAngle &eyeAngles )
 	}
 }
 
+//mygamepedia: i recommend to keep it always disabled, fixes viewmodel clipping with hl2 wpns + the vm freezer doesn't seem to be important
+//this may look a little bit unnatural due to vm shifts when teleported from floor to wall portal, but generally this looks fine
+//in fact they didn't fixed it even in p2, only removed the freezer
+//the workaround doesn't really work anyway
+ConVar cl_portalbase_use_portal_player_calcviewmodelview("cl_portalbase_use_portal_player_calcviewmodelview", "0", 
+	FCVAR_NONE, 
+	"The client will use Portal's version of viewmodel view calculation. Keep it disabled to have less issues as possible.");
+
 extern float g_fMaxViewModelLag;
 void C_Portal_Player::CalcViewModelView( const Vector& eyeOrigin, const QAngle& eyeAngles)
 {
+	if (!cl_portalbase_use_portal_player_calcviewmodelview.GetBool())
+		return BaseClass::CalcViewModelView(eyeOrigin,eyeAngles);
 	// HACK: Manually adjusting the eye position that view model looking up and down are similar
 	// (solves view model "pop" on floor to floor transitions)
 	Vector vInterpEyeOrigin = eyeOrigin;
@@ -699,7 +709,8 @@ void C_Portal_Player::CalcViewModelView( const Vector& eyeOrigin, const QAngle& 
 	Vector vUp;
 	AngleVectors( eyeAngles, &vForward, &vRight, &vUp );
 
-	if ( vForward.z < 0.0f )
+	//mygamepedia: this if is why vm doesn't shift to left/right 
+	if (vForward.z < 0.0f)
 	{
 		float fT = vForward.z * vForward.z;
 		vInterpEyeOrigin += vRight * ( fT * 4.7f ) + vForward * ( fT * 5.0f ) + vUp * ( fT * 4.0f );
