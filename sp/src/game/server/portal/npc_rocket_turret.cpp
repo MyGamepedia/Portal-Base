@@ -424,7 +424,7 @@ bool CNPC_RocketTurret::CreateVPhysics( void )
 void CNPC_RocketTurret::Activate( void )
 {
 	m_filterBeams.SetPassEntity( this );
-	m_filterBeams.AddClassnameToIgnore("player");;
+	m_filterBeams.AddClassnameToIgnore("player");
 	BaseClass::Activate();
 }
 

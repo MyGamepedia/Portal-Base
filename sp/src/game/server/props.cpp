@@ -661,7 +661,7 @@ void CBreakableProp::StickAtPosition( const Vector &stickPosition, const Vector 
 #endif
 
 	//mygamepedia: HACK!? this is unused anyway, this help us to make sure that this is a sticky prop
-	SetFriction(1.01);
+	SetFriction(1.01f);
 }
 
 //-----------------------------------------------------------------------------
@@ -2756,6 +2756,7 @@ void CPhysicsProp::OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t r
 		if( HasInteraction( PROPINTER_PHYSGUN_WORLD_STICK ) )
 		{
 			SetCollisionGroup( COLLISION_GROUP_INTERACTIVE_DEBRIS );
+			SetFriction(1.00f);
 		}
 	}
 

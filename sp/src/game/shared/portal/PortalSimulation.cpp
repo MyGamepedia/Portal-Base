@@ -2475,7 +2475,6 @@ void CPortalSimulator::PostPhysFrame(void)
 			}
 
 			CProp_Portal* pTouchedPortal = pPlayer->m_hPortalEnvironment.Get();
-			CProp_Portal* pTouchedPortal = pPlayer->m_hPortalEnvironment.Get();
 			CPortalSimulator* pSim = GetSimulatorThatOwnsEntity(pPlayer);
 			if (pTouchedPortal && pSim && (pTouchedPortal->m_PortalSimulator.GetPortalSimulatorGUID() != pSim->GetPortalSimulatorGUID()))
 			{

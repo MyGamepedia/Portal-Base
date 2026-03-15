@@ -1694,6 +1694,7 @@ void CProp_Portal::WakeNearbyEntities( void )
 						{
 							variant_t tmpvar;
 							pEntity->AcceptInput("EnableMotion", this, this, tmpvar, 0);
+							pEntity->SetFriction(1.00f);
 						}
 					}
 				}
