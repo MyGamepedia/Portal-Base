@@ -118,8 +118,7 @@ void CWeaponPortalgun::Activate()
 	if ( pPlayer )
 	{
 		//todo: needs more tests i guess, I'm not sure if it's used just to play the anim
-		int iToggleProngs = sv_portalgun_toggle_prongs.GetInt();
-		if (iToggleProngs == 1)
+		if (sv_portalgun_toggle_prongs.GetBool())
 		{
 			CBaseEntity *pHeldObject = GetPlayerHeldEntity( pPlayer );
 			OpenProngs( ( pHeldObject ) ? ( false ) : ( true ) );
