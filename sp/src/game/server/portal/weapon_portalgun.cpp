@@ -104,9 +104,7 @@ void CWeaponPortalgun::Spawn( void )
 //MyGamepedia: i'm not sure for what they added it, let it be optional
 ConVar	sv_portalgun_toggle_prongs("sv_portalgun_toggle_prongs", "0",
 	FCVAR_REPLICATED,
-	"Toggle prongs on level transition or save load, 0 to prevent, 1 to toggle.",
-	true, 0, true, 1
-);
+	"Toggle prongs on level transition or save load, 0 to prevent, 1 to toggle.");
 
 
 void CWeaponPortalgun::Activate()

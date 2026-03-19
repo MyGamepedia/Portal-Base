@@ -3166,8 +3166,7 @@ bool CHL2_Player::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 //MyGamepedia: the same idea as with gravity gun
 ConVar sv_portalgun_fire_delay_prevents_pickup("sv_portalgun_fire_delay_prevents_pickup", "1",
 	FCVAR_REPLICATED,
-	"The player will not be able to pick up anything if portal device is under attack delay (caused by certain animations), 1 to enable.",
-	true, 0, true, 1);
+	"The player will not be able to pick up anything if portal device is under attack delay (caused by certain animations), 1 to enable.");
 
 void CHL2_Player::PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize )
 {

@@ -342,8 +342,7 @@ bool CWeaponPortalgun::Holster( CBaseCombatWeapon *pSwitchingTo )
 //MyGamepedia: this added to prevent certain exploits
 ConVar sv_portalgun_deploy_mode("sv_portalgun_deploy_mode", "1",
 	FCVAR_REPLICATED,
-	"Set blue and orange portal shoot delay when portal device deployed, 0 to have zero delay, 1 to have animation duration delay.",
-	true, 0, true, 1);
+	"Set blue and orange portal shoot delay when portal device deployed, 0 to have zero delay, 1 to have animation duration delay.");
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : Returns true on success, false on failure.
