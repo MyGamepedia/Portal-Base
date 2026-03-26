@@ -601,7 +601,7 @@ void CBaseCombatWeapon::Materialize( void )
 		HL2MPRules()->AddLevelDesignerPlacedObject( this );
 	}
 #else
-	if (!sv_portalbase_item_touch_area.GetBool())
+	if (!sv_portalbase_item_touch_area.GetBool()) 
 	{
 		SetSolid(SOLID_BBOX);
 	}

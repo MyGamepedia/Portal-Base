@@ -415,6 +415,10 @@ void CPortal_Player::UpdateWooshSounds( void )
 
 extern int	gEvilImpulse101;
 extern bool UTIL_ItemCanBeTouchedByPlayer(CBaseEntity *pItem, CBasePlayer *pPlayer);
+
+ConVar sv_portalbase_portalgun_pickup_mode("sv_portalbase_portalgun_pickup_mode", "1",
+	FCVAR_NONE,
+	"True to prevent pick up when no need, false to allow the player pick up portal device in any case.");
 //-----------------------------------------------------------------------------
 // Purpose: Player reacts to bumping a weapon. 
 // Input  : pWeapon - the weapon that the player bumped into.
@@ -451,7 +455,13 @@ bool CPortal_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 			return false;
 	}
 
-	CWeaponPortalgun *pPickupPortalgun = dynamic_cast<CWeaponPortalgun*>( pWeapon );
+	CWeaponPortalgun* pPickupPortalgun = NULL;
+
+	if (pWeapon->IsPortalGun())
+	{
+		//portalgun I want to pickup
+		pPickupPortalgun = static_cast<CWeaponPortalgun*>(pWeapon);
+	}
 
 	// ----------------------------------------
 	// If I already have it just take the ammo
@@ -459,17 +469,48 @@ bool CPortal_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 	if (Weapon_OwnsThisType(pWeapon->GetClassname(), pWeapon->GetSubType()))
 	{
 		// If we picked up a second portal gun set the bool to alow secondary fire
-		if ( pPickupPortalgun )
+
+		//mygamepedia: this part is reworked to prevent players from picking up portal guns with no need (if wanted)
+
+		//portalgun I already own
+		CWeaponPortalgun* pOwnedPortalGun = static_cast<CWeaponPortalgun*>(Weapon_OwnsThisType("weapon_portalgun"));
+
+		if (sv_portalbase_portalgun_pickup_mode.GetBool() && pPickupPortalgun)
 		{
-			CWeaponPortalgun *pPortalGun = static_cast<CWeaponPortalgun*>( Weapon_OwnsThisType( pWeapon->GetClassname() ) );
+			int iPickUpType = 0;
 
-			if ( pPickupPortalgun->CanFirePortal1() )
-				pPortalGun->SetCanFirePortal1();
+			//pick up so I can shoot portal blue
+			if (pPickupPortalgun->CanFirePortal1() && !pOwnedPortalGun->CanFirePortal1())
+			{
+				pOwnedPortalGun->SetCanFirePortal1();
+				iPickUpType++;
+			}
 
-			if ( pPickupPortalgun->CanFirePortal2() )
-				pPortalGun->SetCanFirePortal2();
+			//pick up so I can shoot portal orange
+			if (pPickupPortalgun->CanFirePortal2() && !pOwnedPortalGun->CanFirePortal2())
+			{
+				pOwnedPortalGun->SetCanFirePortal2();
+				iPickUpType++;
+			}
 
-			UTIL_Remove( pWeapon );
+			//picked up to add one more portal to my portal gun, remove and true, if didn't, no remove false
+			if (iPickUpType > 0)
+			{
+				UTIL_Remove(pPickupPortalgun);
+				return true;
+			}
+			else
+				return false;
+			}
+		else if (pPickupPortalgun) //the orig logic that let's you to pick up a portalgun no matter what
+		{
+			if (pPickupPortalgun->CanFirePortal1())
+				pOwnedPortalGun->SetCanFirePortal1();
+
+			if (pPickupPortalgun->CanFirePortal2())
+				pOwnedPortalGun->SetCanFirePortal2();
+
+			UTIL_Remove(pPickupPortalgun);
 			return true;
 		}
 

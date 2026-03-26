@@ -52,7 +52,6 @@
 #define HIDEWEAPON_THINK_CONTEXT			"BaseCombatWeapon_HideThink"
 
 extern bool UTIL_ItemCanBeTouchedByPlayer( CBaseEntity *pItem, CBasePlayer *pPlayer );
-extern ConVar sv_portalbase_item_touch_area;
 
 #if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
 #ifdef _DEBUG
@@ -62,6 +61,10 @@ ConVar tf_weapon_criticals_bucket_cap( "tf_weapon_criticals_bucket_cap", "1000.0
 ConVar tf_weapon_criticals_bucket_bottom( "tf_weapon_criticals_bucket_bottom", "-250.0", FCVAR_REPLICATED | FCVAR_CHEAT );
 ConVar tf_weapon_criticals_bucket_default( "tf_weapon_criticals_bucket_default", "300.0", FCVAR_REPLICATED | FCVAR_CHEAT );
 #endif // TF
+
+ConVar sv_portalbase_item_touch_area("sv_portalbase_item_touch_area", "1",
+	FCVAR_REPLICATED,
+	"Makes pickup item touch area separate from the item, this allows items to work with other triggers and pass portals.");
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {

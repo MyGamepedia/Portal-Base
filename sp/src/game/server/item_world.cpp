@@ -23,9 +23,7 @@
 
 #define ITEM_PICKUP_BOX_BLOAT		24
 
-ConVar sv_portalbase_item_touch_area("sv_portalbase_item_touch_area", "1",
-	FCVAR_REPLICATED,
-	"Makes pickup item touch area separate from the item, this allows items to work with other triggers and pass portals.");
+extern ConVar sv_portalbase_item_touch_area;
 
 class CWorldItem : public CBaseAnimating
 {
