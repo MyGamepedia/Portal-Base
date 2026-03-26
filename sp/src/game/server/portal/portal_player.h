@@ -17,15 +17,6 @@
 //=============================================================================
 // >> Portal_Player
 //=============================================================================
-CBaseEntity* g_pLastCombineSpawn = NULL;
-CBaseEntity* g_pLastRebelSpawn = NULL;
-
-enum
-{
-	TEAM_COMBINE = 2,
-	TEAM_REBELS,
-};
-
 class CPortal_Player : public CHL2_Player
 {
 public:

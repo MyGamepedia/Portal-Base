@@ -325,7 +325,7 @@ public:
 
 	void	SetFadeDistance( float minFadeDist, float maxFadeDist );
 
-	inline float	GetFadeDistanceMax() { return m_fadeMinDist; }
+	inline float	GetFadeDistanceMax() { return m_fadeMaxDist; }
 	inline float	GetFadeDistanceMin() { return m_fadeMinDist; };
 
 	inline float	GetFadeDistanceScale() { return m_flFadeScale; };

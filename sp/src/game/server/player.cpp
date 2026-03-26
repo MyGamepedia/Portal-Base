@@ -122,6 +122,8 @@ extern ConVar *sv_maxreplay;
 
 extern CServerGameDLL g_ServerGameDLL;
 
+extern CBaseEntity* g_pLastSpawn;
+
 // TIME BASED DAMAGE AMOUNT
 // tweak these values based on gameplay feedback:
 #define PARALYZE_DURATION	2		// number of 2 second intervals to take damage

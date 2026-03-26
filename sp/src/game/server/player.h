@@ -36,8 +36,6 @@ public:
 	bool			paused;
 };
 
-CBaseEntity* g_pLastSpawn = NULL;
-
 // Info about last 20 or so updates to the
 class CPlayerCmdInfo
 {

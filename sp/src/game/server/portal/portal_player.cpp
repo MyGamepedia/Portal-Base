@@ -17,6 +17,17 @@
 #include "physicsshadowclone.h"
 #include "player.h"
 
+CBaseEntity* g_pLastSpawn = NULL;
+CBaseEntity* g_pLastCombineSpawn = NULL;
+CBaseEntity* g_pLastRebelSpawn = NULL;
+
+enum
+{
+	TEAM_COMBINE = 2,
+	TEAM_REBELS,
+};
+
+
 LINK_ENTITY_TO_CLASS( player, CPortal_Player );
 
 IMPLEMENT_SERVERCLASS_ST(CPortal_Player, DT_Portal_Player)

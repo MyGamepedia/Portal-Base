@@ -1039,7 +1039,7 @@ public:
 	float				GetGravity( void ) const;
 
 	inline void				SetStickied(const bool bStickied) { m_bStickied = bStickied; };
-	inline bool				IsStickied() { m_bStickied; };
+	inline bool				IsStickied() { return m_bStickied; };
 
 	// Sets the model from a model index 
 	void				SetModelByIndex( int nModelIndex );
