@@ -171,7 +171,7 @@ void CNPC_SecurityCamera::Spawn( void )
 	SetCollisionBounds( Vector( -2.5f, -18.0f, -32.0f ), Vector( 42.0f, 18.0f, 16.0f ) );
 
 	RemoveFlag( FL_AIMTARGET );
-	AddEFlags( EFL_NO_DISSOLVE );
+	AddEFlags(EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL); //mygamepedia: the second flag prevents bugs with megaphyscannon
 
 	SetPoseParameter( SECURITY_CAMERA_BC_YAW, 0 );
 	SetPoseParameter( SECURITY_CAMERA_BC_PITCH, 0 );

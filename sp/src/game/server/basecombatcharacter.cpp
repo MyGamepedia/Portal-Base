@@ -64,7 +64,7 @@ extern int	g_interactionBarnacleVictimReleased;
 extern ConVar weapon_showproficiency;
 
 ConVar ai_show_hull_attacks( "ai_show_hull_attacks", "0" );
-ConVar ai_force_serverside_ragdoll( "ai_force_serverside_ragdoll", "0" );
+ConVar ai_force_serverside_ragdoll( "ai_force_serverside_ragdoll", "1" ); //mygamepedia: always use server ragdolls to work with portals
 
 ConVar nb_last_area_update_tolerance( "nb_last_area_update_tolerance", "4.0", FCVAR_CHEAT, "Distance a character needs to travel in order to invalidate cached area" ); // 4.0 tested as sweet spot (for wanderers, at least). More resulted in little benefit, less quickly diminished benefit [7/31/2008 tom]
 
@@ -105,6 +105,8 @@ BEGIN_DATADESC( CBaseCombatCharacter )
 	DEFINE_FIELD( m_hActiveWeapon, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_bForceServerRagdoll, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bPreventWeaponPickup, FIELD_BOOLEAN ),
+
+	DEFINE_FIELD(m_hMyCorpuse, FIELD_EHANDLE),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "KilledNPC", InputKilledNPC ),
 
@@ -1520,7 +1522,13 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 		// in single player create ragdolls on the server when the player hits someone
 		// with their vehicle - for more dramatic death/collisions
 		CBaseEntity *pRagdoll = CreateServerRagdoll( this, m_nForceBone, info2, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
-		FixupBurningServerRagdoll( pRagdoll );
+		if (pRagdoll)
+		{
+			//pRagdoll->ApplyAbsVelocityImpulse(forceVector); //mygamepedia: apply force vec that is used by client rags
+			FixupBurningServerRagdoll(pRagdoll);
+			m_hMyCorpuse = pRagdoll;
+		}
+
 		RemoveDeferred();
 		return true;
 	}
@@ -1531,10 +1539,17 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 
 #ifdef HL2_EPISODIC
 	// Burning corpses are server-side in episodic, if we're in darkness mode
-	if ( IsOnFire() && HL2GameRules()->IsAlyxInDarknessMode() )
+	if ( IsOnFire() && g_pGameRules->IsAlyxInDarknessMode() )
 	{
-		CBaseEntity *pRagdoll = CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_DEBRIS );
-		FixupBurningServerRagdoll( pRagdoll );
+		CBaseEntity *pRagdoll = CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_INTERACTIVE_DEBRIS );
+
+		if (pRagdoll)
+		{
+			//pRagdoll->ApplyAbsVelocityImpulse(forceVector); //mygamepedia: apply force vec that is used by client rags
+			FixupBurningServerRagdoll(pRagdoll);
+			m_hMyCorpuse = pRagdoll;
+		}
+
 		RemoveDeferred();
 		return true;
 	}
@@ -1544,7 +1559,7 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 
 	bool bMegaPhyscannonActive = false;
 #if !defined( HL2MP )
-	bMegaPhyscannonActive = HL2GameRules()->MegaPhyscannonActive();
+	bMegaPhyscannonActive = g_pGameRules->MegaPhyscannonActive();
 #endif // !HL2MP
 
 	// Mega physgun requires everything to be a server-side ragdoll
@@ -1555,8 +1570,14 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 
 		//FIXME: This is fairly leafy to be here, but time is short!
 		CBaseEntity *pRagdoll = CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
-		FixupBurningServerRagdoll( pRagdoll );
-		PhysSetEntityGameFlags( pRagdoll, FVPHYSICS_NO_SELF_COLLISIONS );
+
+		if (pRagdoll)
+		{
+			//pRagdoll->ApplyAbsVelocityImpulse(forceVector); //mygamepedia: apply force vec that is used by client rags
+			FixupBurningServerRagdoll(pRagdoll);
+			m_hMyCorpuse = pRagdoll;
+		}
+
 		RemoveDeferred();
 
 		return true;
@@ -1564,7 +1585,13 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 
 	if( hl2_episodic.GetBool() && Classify() == CLASS_PLAYER_ALLY_VITAL )
 	{
-		CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
+		CBaseEntity* pRagdoll = CreateServerRagdoll( this, m_nForceBone, newinfo, COLLISION_GROUP_INTERACTIVE_DEBRIS, true );
+		if (pRagdoll)
+		{
+			//pRagdoll->ApplyAbsVelocityImpulse(forceVector); //mygamepedia: apply force vec that is used by client rags
+			m_hMyCorpuse = pRagdoll;
+		}
+
 		RemoveDeferred();
 		return true;
 	}
@@ -2789,10 +2816,10 @@ CBaseEntity *CBaseCombatCharacter::FindHealthItem( const Vector &vecPosition, co
 
 	for ( int i = 0; i < count; i++ )
 	{
-		CItem *pItem = dynamic_cast<CItem *>(list[ i ]);
-
-		if( pItem )
+		if(list[i]->IsItem())
 		{
+			CItem* pItem = static_cast<CItem*>(list[i]);
+
 			// Healthkits and healthvials
 			if( pItem->ClassMatches( "item_health*" ) && FVisible( pItem ) )
 			{
@@ -3103,7 +3130,7 @@ void CBaseCombatCharacter::VPhysicsShadowCollision( int index, gamevcollisioneve
 	float flOtherAttackerTime = 0.0f;
 
 #if defined( HL2_DLL ) && !defined( HL2MP )
-	if ( HL2GameRules()->MegaPhyscannonActive() == true )
+	if ( g_pGameRules->MegaPhyscannonActive() == true )
 	{
 		flOtherAttackerTime = 1.0f;
 	}

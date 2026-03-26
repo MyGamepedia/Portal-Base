@@ -354,12 +354,10 @@ void CProp_Portal::DelayedPlacementThink( void )
 		DoFizzleEffect( PORTAL_FIZZLE_CLOSE, false );
 	}
 
-	CWeaponPortalgun *pPortalGun = dynamic_cast<CWeaponPortalgun*>( m_hPlacedBy.Get() );
-
-	if( pPortalGun )
+	if(m_hPlacedBy.Get() && m_hPlacedBy.Get()->IsPortalGun())
 	{
-		CPortal_Player *pFiringPlayer = dynamic_cast<CPortal_Player *>( pPortalGun->GetOwner() );
-		if( pFiringPlayer )
+		CWeaponPortalgun* pPortalGun = static_cast<CWeaponPortalgun*>(m_hPlacedBy.Get());
+		if(ToBasePlayer(pPortalGun->GetOwner()))
 		{
 			//pFiringPlayer->IncrementPortalsPlaced();
 
@@ -480,13 +478,14 @@ void CProp_Portal::DoFizzleEffect( int iEffect, bool bDelayedPos /*= true*/ )
 	ep.m_pOrigin = &m_vAudioOrigin;
 
 	// Rumble effects on the firing player (if one exists)
-	CWeaponPortalgun *pPortalGun = dynamic_cast<CWeaponPortalgun*>( m_hPlacedBy.Get() );
-
-	if ( pPortalGun && (iEffect != PORTAL_FIZZLE_CLOSE ) 
-				    && (iEffect != PORTAL_FIZZLE_SUCCESS )
-				    && (iEffect != PORTAL_FIZZLE_NONE )		)
+	if (m_hPlacedBy.Get() && m_hPlacedBy.Get()->IsPortalGun()
+		&& (iEffect != PORTAL_FIZZLE_CLOSE)
+		&& (iEffect != PORTAL_FIZZLE_SUCCESS) 
+		&& (iEffect != PORTAL_FIZZLE_NONE))
 	{
-		CBasePlayer* pPlayer = (CBasePlayer*)pPortalGun->GetOwner();
+		CWeaponPortalgun* pPortalGun = static_cast<CWeaponPortalgun*>(m_hPlacedBy.Get());
+
+		CBasePlayer* pPlayer = ToBasePlayer(pPortalGun->GetOwner());
 		if ( pPlayer )
 		{
 			pPlayer->RumbleEffect( RUMBLE_PORTAL_PLACEMENT_FAILURE, 0, RUMBLE_FLAGS_NONE );
@@ -1629,7 +1628,7 @@ void CProp_Portal::WakeNearbyEntities( void )
 			if( IsOBBIntersectingOBB( ptOrigin, qAngles, CProp_Portal_Shared::vLocalMins, CProp_Portal_Shared::vLocalMaxs, 
 				ptEntityCenter, pEntCollision->GetCollisionAngles(), pEntCollision->OBBMins(), pEntCollision->OBBMaxs() ) )
 			{
-				if( FClassnameIs( pEntity, "func_portal_detector" ) )
+				if(pEntity->IsPortalDetector())
 				{
 					// It's a portal detector
 					CFuncPortalDetector *pPortalDetector = static_cast<CFuncPortalDetector*>( pEntity );
@@ -1669,6 +1668,15 @@ void CProp_Portal::WakeNearbyEntities( void )
 
 				if ( pEntity->GetMoveType() == MOVETYPE_VPHYSICS )
 				{
+					//mygamepedia: crossbow bolts don't have proper physics model, we should check it here
+					//this part will enable motion for stickied bolts in case if this portal is active
+					if (pEntity->IsCrossbowBolt() && pEntity->IsStickied() && IsActivedAndLinked() &&
+						UTIL_IntersectEntityExtentsWithGivenPortal(this, pEntity))
+					{
+						variant_t tmpvar;
+						pEntity->AcceptInput("EnableMotion", this, this, tmpvar, 0);
+					}
+
 					IPhysicsObject *pPhysicsObject = pEntity->VPhysicsGetObject();
 
 					if (!pPhysicsObject)
@@ -1687,14 +1695,12 @@ void CProp_Portal::WakeNearbyEntities( void )
 					}
 					else
 					{
-						//mygamepedia: if has that group and used this flag and marked - this is a sticky prop
-						//so now we don't stucked prop in wall even under portal
-						if (pEntity->GetCollisionGroup() == COLLISION_GROUP_INTERACTIVE_DEBRIS && 
-							pEntity->HasSpawnFlags(SF_PHYSPROP_ENABLE_ON_PHYSCANNON) && pEntity->GetFriction() > 1.00f)
+						//mygamepedia: if Stickied and i'm linked active portal and in my hole - enable motion for such prop
+						if (pEntity->IsStickied() && IsActivedAndLinked() && UTIL_IntersectEntityExtentsWithGivenPortal(this, pEntity))
 						{
 							variant_t tmpvar;
 							pEntity->AcceptInput("EnableMotion", this, this, tmpvar, 0);
-							pEntity->SetFriction(1.00f);
+							pEntity->SetStickied(false);
 						}
 					}
 				}
@@ -2045,11 +2051,11 @@ void CProp_Portal::PlacePortal( const Vector &vOrigin, const QAngle &qAngles, fl
 		else if ( fPlacementSuccess == PORTAL_ANALOG_SUCCESS_PASSTHROUGH_SURFACE )
 			m_iDelayedFailure = PORTAL_FIZZLE_NONE;
 
-		CWeaponPortalgun *pPortalGun = dynamic_cast<CWeaponPortalgun*>( m_hPlacedBy.Get() );
-
-		if( pPortalGun )
+		if(m_hPlacedBy.Get() && m_hPlacedBy.Get()->IsPortalGun())
 		{
-			CPortal_Player *pFiringPlayer = dynamic_cast<CPortal_Player *>( pPortalGun->GetOwner() );
+			CWeaponPortalgun* pPortalGun = static_cast<CWeaponPortalgun*>(m_hPlacedBy.Get());
+
+			CBasePlayer *pFiringPlayer = ToBasePlayer(pPortalGun->GetOwner());
 			if( pFiringPlayer )
 			{
 				g_PortalGameStats.Event_PortalPlacement( pFiringPlayer->GetAbsOrigin(), vOrigin, m_iDelayedFailure );
@@ -2074,12 +2080,12 @@ void CProp_Portal::PlacePortal( const Vector &vOrigin, const QAngle &qAngles, fl
 		m_iDelayedFailure = PORTAL_FIZZLE_SUCCESS;
 	}
 
-	CWeaponPortalgun *pPortalGun = dynamic_cast<CWeaponPortalgun*>( m_hPlacedBy.Get() );
-
-	if( pPortalGun )
+	if (m_hPlacedBy.Get() && m_hPlacedBy.Get()->IsPortalGun())
 	{
-		CPortal_Player *pFiringPlayer = dynamic_cast<CPortal_Player *>( pPortalGun->GetOwner() );
-		if( pFiringPlayer )
+		CWeaponPortalgun* pPortalGun = static_cast<CWeaponPortalgun*>(m_hPlacedBy.Get());
+
+		CBasePlayer* pFiringPlayer = ToBasePlayer(pPortalGun->GetOwner());
+		if (pFiringPlayer)
 		{
 			g_PortalGameStats.Event_PortalPlacement( pFiringPlayer->GetAbsOrigin(), vOrigin, m_iDelayedFailure );
 		}

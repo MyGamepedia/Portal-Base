@@ -575,7 +575,7 @@ void CBaseEntity::ValidateDataDescription(void)
 
 
 //-----------------------------------------------------------------------------
-// Sets the collision bounds + the size
+// Sets the collision bounds + the size. Format: backward/forward, side left/right, up/down.
 //-----------------------------------------------------------------------------
 void CBaseEntity::SetCollisionBounds( const Vector& mins, const Vector &maxs )
 {
@@ -1851,6 +1851,7 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 
 	DEFINE_KEYFIELD( m_flGravity, FIELD_FLOAT, "gravity" ),
 	DEFINE_KEYFIELD( m_flFriction, FIELD_FLOAT, "friction" ),
+	DEFINE_KEYFIELD(m_bStickied, FIELD_BOOLEAN, "stickied"),
 
 	// Local time is local to each object.  It doesn't need to be re-based if the clock
 	// changes.  Therefore it is saved as a FIELD_FLOAT, not a FIELD_TIME
@@ -2568,7 +2569,7 @@ void CBaseEntity::PhysicsRelinkChildren( float dt )
 	// iterate through all children
 	for ( child = FirstMoveChild(); child != NULL; child = child->NextMovePeer() )
 	{
-		if ( child->IsSolid() || child->IsSolidFlagSet(FSOLID_TRIGGER) )
+		if ( child->IsSolid() || child->IsSolidFlagSet(FSOLID_TRIGGER))
 		{
 			child->PhysicsTouchTriggers();
 		}
@@ -2595,13 +2596,18 @@ void CBaseEntity::PhysicsRelinkChildren( float dt )
 	}
 }
 
+ConVar sv_portalbase_items_touch_triggers("sv_portalbase_items_touch_triggers", "1",
+	FCVAR_NONE,
+	"Allows pick up items touch triggers to work with oortals.");
+
 void CBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
 {
 	edict_t *pEdict = edict();
 	if ( pEdict && !IsWorld() )
 	{
 		Assert(CollisionProp());
-		bool isTriggerCheckSolids = IsSolidFlagSet( FSOLID_TRIGGER );
+		bool isTriggerCheckSolids = (IsSolidFlagSet(FSOLID_TRIGGER));
+
 		bool isSolidCheckTriggers = IsSolid() && !isTriggerCheckSolids;		// NOTE: Moving triggers (items, ammo etc) are not 
 																			// checked against other triggers to reduce the number of touchlinks created
 		if ( !(isSolidCheckTriggers || isTriggerCheckSolids) )

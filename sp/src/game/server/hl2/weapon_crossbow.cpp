@@ -24,6 +24,8 @@
 #include "rumble_shared.h"
 #include "gamestats.h"
 #include "decals.h"
+#include "func_break.h"
+#include "prop_portal.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -40,6 +42,14 @@
 
 extern ConVar sk_plr_dmg_crossbow;
 extern ConVar sk_npc_dmg_crossbow;
+
+ConVar sv_portalbase_crossbowbolt_protrusion("sv_portalbase_crossbowbolt_protrusion", "6", 
+	FCVAR_NONE, 
+	"The distance that the bolt will not pass through.");
+
+ConVar sv_portalbase_crossbowbolt_portal_displace("sv_portalbase_crossbowbolt_portal_displace", "1",
+	FCVAR_NONE,
+	"The distance that the bolt will be displaced (pushed away) by portal hole before teleporting.");
 
 void TE_StickyBolt( IRecipientFilter& filter, float delay,	Vector vecDirection, const Vector *origin );
 
@@ -67,6 +77,9 @@ public:
 	bool CreateVPhysics( void );
 	unsigned int PhysicsSolidMaskForEntity() const;
 	static CCrossbowBolt *BoltCreate( const Vector &vecOrigin, const QAngle &angAngles, CBasePlayer *pentOwner = NULL );
+	void InputEnableMotion(inputdata_t& inputdata);
+	virtual bool IsCrossbowBolt() { return true; }
+	virtual bool IsPortalTeleportable() { return true; }
 
 protected:
 
@@ -74,6 +87,8 @@ protected:
 
 	CHandle<CSprite>		m_pGlowSprite;
 	//CHandle<CSpriteTrail>	m_pGlowTrail;
+
+	bool	m_bPortalRot; //mygamepedia: tell the bolt to rotate because wanted by portal
 
 	DECLARE_DATADESC();
 	DECLARE_SERVERCLASS();
@@ -88,6 +103,10 @@ BEGIN_DATADESC( CCrossbowBolt )
 	// These are recreated on reload, they don't need storage
 	DEFINE_FIELD( m_pGlowSprite, FIELD_EHANDLE ),
 	//DEFINE_FIELD( m_pGlowTrail, FIELD_EHANDLE ),
+	DEFINE_FIELD(m_bPortalRot, FIELD_BOOLEAN),
+
+	//Inputs
+	DEFINE_INPUTFUNC(FIELD_VOID, "EnableMotion", InputEnableMotion),
 
 END_DATADESC()
 
@@ -166,7 +185,7 @@ void CCrossbowBolt::Spawn( void )
 	SetModel( "models/crossbow_bolt.mdl" );
 	SetMoveType( MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_CUSTOM );
 	UTIL_SetSize( this, -Vector(0.3f,0.3f,0.3f), Vector(0.3f,0.3f,0.3f) );
-	SetSolid( SOLID_BBOX );
+	SetSolid(SOLID_VPHYSICS); //mygamepedia: it was SOLID_BBOX, now it's SOLID_VPHYSICS cuz we need proper orientation
 	SetGravity( 0.05f );
 	
 	// Make sure we're updated if we're underwater
@@ -193,6 +212,10 @@ void CCrossbowBolt::Precache( void )
 
 	PrecacheModel( "sprites/light_glow02_noz.vmt" );
 }
+
+ConVar sv_portalbase_crossbowbolt_pass_func_breakable_glass("sv_portalbase_crossbowbolt_pass_func_breakable_glass", "1",
+	FCVAR_NONE,
+	"Let crossbow bolt to go through as well func_breakable (if glass).");
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -255,6 +278,13 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 		if ( pOther->GetCollisionGroup() == COLLISION_GROUP_BREAKABLE_GLASS )
 			 return;
 
+		if (sv_portalbase_crossbowbolt_pass_func_breakable_glass.GetBool() && FClassnameIs(pOther, "func_breakable"))
+		{
+			CBreakable* pOtherEntity = static_cast<CBreakable*>(pOther);
+			if (pOtherEntity->GetMaterialType() == matGlass)
+				return;
+		}
+
 		if ( !pOther->IsAlive() )
 		{
 			// We killed it! 
@@ -308,7 +338,7 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 		tr = BaseClass::GetTouchTrace();
 
 		// See if we struck the world
-		if ( pOther->GetMoveType() == MOVETYPE_NONE && !( tr.surface.flags & SURF_SKY ) )
+		if ( pOther->GetMoveType() == MOVETYPE_NONE && !( tr.surface.flags & SURF_SKY ) && !UTIL_IntersectEntityExtentsWithPortal(this))
 		{
 			EmitSound( "Weapon_Crossbow.BoltHitWorld" );
 
@@ -334,34 +364,40 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 				// Start to sink faster
 				SetGravity( 1.0f );
 			}
-			else
+			else //mygamepedia: this is the code when stickied to a wall, this part is reworked to unstick bolt when teleported by portal
 			{
-				SetThink( &CCrossbowBolt::SUB_Remove );
-				SetNextThink( gpGlobals->curtime + 2.0f );
-				
-				//FIXME: We actually want to stick (with hierarchy) to what we've hit
-				SetMoveType( MOVETYPE_NONE );
-			
+				SetMoveType(MOVETYPE_VPHYSICS); //mygamepedia: HACK! this allows portal detect (doesn't seem to break anything)
+
 				Vector vForward;
+				AngleVectors(GetAbsAngles(), &vForward);
+				VectorNormalize(vForward);
 
-				AngleVectors( GetAbsAngles(), &vForward );
-				VectorNormalize ( vForward );
-
+				//data for effects
 				CEffectData	data;
-
 				data.m_vOrigin = tr.endpos;
 				data.m_vNormal = vForward;
 				data.m_nEntIndex = 0;
-			
-				DispatchEffect( "BoltImpact", data );
-				
-				UTIL_ImpactTrace( &tr, DMG_BULLET );
 
-				AddEffects( EF_NODRAW );
-				SetTouch( NULL );
-				SetThink( &CCrossbowBolt::SUB_Remove );
-				SetNextThink( gpGlobals->curtime + 2.0f );
+				DispatchEffect("BoltImpact", data); //orig code creates temp model here (the stickied bolt), it doesn't anymore as disabled
+				UTIL_ImpactTrace(&tr, DMG_BULLET);  //creates decal (not in a very consistent way)
 
+				m_nSkin = BOLT_SKIN_NORMAL; //not orange anymore
+				SetStickied(true); //i'm stickid now
+
+				//our bbox is initially very small, pull out bolt out of the wall so only the half will appear in the wall
+				Vector pos = tr.endpos - vForward * sv_portalbase_crossbowbolt_protrusion.GetFloat();
+				Teleport(&pos, NULL, NULL);
+
+				//fix size so it can work with portal utils
+				UTIL_SetSize(this, -Vector(0.3f, 0.3f, 0.3f), Vector(sv_portalbase_crossbowbolt_protrusion.GetFloat() + 0.3f, 0.3f, 0.3f));
+
+				//SetTouch( NULL );
+
+				//no more think until wanted
+				SetThink(NULL);
+				SetNextThink(-1); //don't think until wanted
+
+				//create the white impact sprite
 				if ( m_pGlowSprite != NULL )
 				{
 					m_pGlowSprite->TurnOn();
@@ -408,13 +444,53 @@ void CCrossbowBolt::BubbleThink( void )
 
 	// Make danger sounds out in front of me, to scare snipers back into their hole
 	CSoundEnt::InsertSound( SOUND_DANGER_SNIPERONLY, GetAbsOrigin() + GetAbsVelocity() * 0.2, 120.0f, 0.5f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
-
-	if ( GetWaterLevel()  == 0 )
+	
+	//mygamepedia: stickied and not underwater bolts should not create bubbles
+	if (GetWaterLevel() == 0 || IsStickied())
 		return;
 
 	UTIL_BubbleTrail( GetAbsOrigin() - GetAbsVelocity() * 0.1f, GetAbsOrigin(), 5 );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Enable motion when touched by portal while stickied. Done by input for easy debug.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+void CCrossbowBolt::InputEnableMotion(inputdata_t& inputdata)
+{
+	SetStickied(false); //not stickied anymore
+
+	Vector vForward;
+	QAngle qAng = GetAbsAngles();
+	AngleVectors(qAng, &vForward);
+	VectorNormalize(vForward);
+
+	//pull me out to a certain distance as i should be pushed back by portal
+	Vector vPos = GetAbsOrigin() - vForward * sv_portalbase_crossbowbolt_portal_displace.GetFloat();
+
+	m_bPortalRot = true;
+	qAng.x = -90;
+	AngleVectors(qAng, &vForward);
+	Vector vVel = vForward;
+
+	//let it be like this, this is a stable way
+	Teleport(&vPos, NULL, NULL);
+	SetAbsAngles(qAng);
+	SetAbsVelocity(vVel);
+
+
+	UTIL_SetSize(this, -Vector(0.3f, 0.3f, 0.3f), Vector(0.3f, 0.3f, 0.3f));
+
+	//restore needed move types
+	SetMoveType(MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_CUSTOM);
+	SetGravity(1.0f);
+
+
+	//restore think
+	SetTouch(&CCrossbowBolt::BoltTouch);
+	SetThink(&CCrossbowBolt::BubbleThink);
+	SetNextThink(gpGlobals->curtime + 0.1f);
+}
 
 //-----------------------------------------------------------------------------
 // CWeaponCrossbow

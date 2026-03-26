@@ -55,6 +55,10 @@ C_Portal_Player::C_Portal_Player()
 	AddVar( &m_angEyeAngles, &m_iv_angEyeAngles, LATCH_SIMULATION_VAR );
 
 	m_EntClientFlags |= ENTCLIENTFLAG_DONTUSEIK;
+
+	//mygamepedia: fix projected texture cuts 
+	static ConVarRef scissor("r_flashlightscissor");
+	scissor.SetValue("0");
 }
 
 C_Portal_Player::~C_Portal_Player( void )
@@ -590,6 +594,7 @@ void C_Portal_Player::CalcPortalView( Vector &eyeOrigin, QAngle &eyeAngles )
 
 	//Re-apply the screenshake (we just stomped it)
 	vieweffects->ApplyShake( eyeOrigin, eyeAngles, 1.0 );
+	VectorAdd(eyeAngles, m_Local.m_vecPunchAngle, eyeAngles); //mygamepedia: this fixes not working wpn view push
 
 	C_Prop_Portal *pPortal = m_hPortalEnvironment.Get();
 	assert( pPortal );

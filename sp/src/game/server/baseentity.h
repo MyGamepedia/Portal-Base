@@ -942,8 +942,15 @@ public:
 	virtual bool	OnControls( CBaseEntity *pControls ) { return false; }
 	virtual bool	HasTarget( string_t targetname );
 	virtual	bool	IsPlayer( void ) const { return false; }
+	//virtual bool	IsPortalTeleportable() { return false; } //can this ent teleport in portals ?
 	virtual	bool	IsSecurityCamera() const { return false; } //true for sec camera
 	virtual	bool	IsBaseTank() const { return false; } //true for tanks
+	virtual bool	IsPortalDetector() { return false; } //true for func_portal_detector
+	virtual bool	IsCrossbowBolt() { return false; } //true for crossbow_bolt
+	virtual bool	IsBaseDoor() { return false; }	//true for doors
+	virtual bool	IsPortalGun() { return false; } //true for weapon_portalgun
+	virtual bool	IsItem() { return false; } //true for CItem
+	virtual bool	IsPortalNonTeleportable() { return false; } //replaces hardcoded compare by str g_pszPortalNonTeleportable with per class bool
 	virtual bool	IsNetClient( void ) const { return false; }
 	virtual bool	IsTemplate( void ) { return false; }
 	virtual bool	IsBaseObject( void ) const { return false; }
@@ -1220,6 +1227,9 @@ public:
 	void			SetGravity( float gravity );
 	float			GetFriction( void ) const;
 	void			SetFriction( float flFriction );
+
+	void			SetStickied(const bool bStickied) { m_bStickied = bStickied; }
+	bool			IsStickied(){ return m_bStickied; }
 
 	virtual	bool FVisible ( CBaseEntity *pEntity, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
 	virtual bool FVisible( const Vector &vecTarget, int traceMask = MASK_BLOCKLOS, CBaseEntity **ppBlocker = NULL );
@@ -1667,6 +1677,8 @@ private:
 	// was pev->friction
 	CNetworkVarForDerived( float, m_flFriction );
 	CNetworkVar( float, m_flElasticity );
+
+	CNetworkVar(bool, m_bStickied);
 
 	// was pev->ltime
 	float			m_flLocalTime;

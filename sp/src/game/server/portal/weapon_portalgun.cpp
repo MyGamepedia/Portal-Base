@@ -104,9 +104,7 @@ void CWeaponPortalgun::Spawn( void )
 //MyGamepedia: i'm not sure for what they added it, let it be optional
 ConVar	sv_portalgun_toggle_prongs("sv_portalgun_toggle_prongs", "0",
 	FCVAR_NONE,
-	"Toggle prongs on level transition or save load, 0 to prevent, 1 to toggle.",
-	true, 0, true, 1
-);
+	"Toggle prongs on level transition or save load, 0 to prevent, 1 to toggle.");
 
 
 void CWeaponPortalgun::Activate()
@@ -120,8 +118,7 @@ void CWeaponPortalgun::Activate()
 	if ( pPlayer )
 	{
 		//todo: needs more tests i guess, I'm not sure if it's used just to play the anim
-		int iToggleProngs = sv_portalgun_toggle_prongs.GetInt();
-		if (iToggleProngs == 1)
+		if (sv_portalgun_toggle_prongs.GetBool())
 		{
 			CBaseEntity *pHeldObject = GetPlayerHeldEntity( pPlayer );
 			OpenProngs( ( pHeldObject ) ? ( false ) : ( true ) );
@@ -932,6 +929,10 @@ bool CWeaponPortalgun::Reload(void)
 	return bFizzledPortal;
 }
 
+ConVar sv_portalbase_portalgun_fast_refire("sv_portalbase_portalgun_fast_refire", "1",
+	FCVAR_NONE,
+	"Let portal device fire a soon as possible without any delay.");
+
 //====================================================================================
 // WEAPON BEHAVIOUR
 //====================================================================================
@@ -942,20 +943,33 @@ void CWeaponPortalgun::ItemPostFrame(void)
 	if (m_bInReload)
 		return;
 
-	CBasePlayer *pOwner = ToBasePlayer(GetOwner());
+	CBasePlayer* pOwner = ToBasePlayer(GetOwner());
 
 	if (pOwner == NULL)
 		return;
 
-	//Allow a refire as fast as the player can click
-	if (((pOwner->m_nButtons & IN_ATTACK) == false) && (m_flSoonestPrimaryAttack < gpGlobals->curtime))
+	if (sv_portalbase_portalgun_fast_refire.GetBool())
 	{
-		m_flNextPrimaryAttack = gpGlobals->curtime - 0.1f;
+		//Allow a refire as fast as the player can click
+		if (((pOwner->m_nButtons & IN_ATTACK) == false) && (m_flSoonestPrimaryAttack < gpGlobals->curtime) && pOwner->GetWaterLevel() == 0)
+			m_flNextPrimaryAttack = gpGlobals->curtime - 0.1f;
+
+		if (((pOwner->m_nButtons & IN_ATTACK2) == false) && (m_flSoonestSecondaryAttack < gpGlobals->curtime) && pOwner->GetWaterLevel() == 0)
+			m_flNextSecondaryAttack = gpGlobals->curtime - 0.1f;
 	}
 
-	if (((pOwner->m_nButtons & IN_ATTACK2) == false) && (m_flSoonestSecondaryAttack < gpGlobals->curtime))
+	//mygamepedia: play underwater sound if attempts to shoot
+	//in attack1 and no delay or in attack2 and no delay AND underwater AND this weapon can't shoot underwater
+
+	bool bDelayed = (m_flNextPrimaryAttack <= gpGlobals->curtime || m_flNextSecondaryAttack <= gpGlobals->curtime);
+	bool bInAttack = ((pOwner->m_nButtons & IN_ATTACK) || (pOwner->m_nButtons & IN_ATTACK2));
+
+
+	if (bDelayed && bInAttack && pOwner->GetWaterLevel() == 3 && !m_bFiresUnderwater)
 	{
-		m_flNextSecondaryAttack = gpGlobals->curtime - 0.1f;
+		WeaponSound(EMPTY);
+		m_flNextPrimaryAttack = gpGlobals->curtime + 0.5;
+		m_flNextSecondaryAttack = gpGlobals->curtime + 0.5;
 	}
 }
 

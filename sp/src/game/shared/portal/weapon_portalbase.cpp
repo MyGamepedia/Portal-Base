@@ -26,6 +26,7 @@ extern IVModelInfo* modelinfo;
 	#include "vgui_controls/Controls.h"
 	#include "hud_crosshair.h"
 	#include "PortalRender.h"
+	#include "c_te_effect_dispatch.h"
 
 #else
 
@@ -89,6 +90,18 @@ LINK_ENTITY_TO_CLASS( weapon_portal_base, CWeaponPortalBase );
 
 #endif
 
+//-----------------------------------------------------------------------------
+// Purpose: To wrap PORTAL mod specific functionality into one place
+//-----------------------------------------------------------------------------
+static inline bool ShouldDrawLocalPlayerViewModel(void)
+{
+#if defined( PORTAL )
+		return false;
+#else
+		return !C_BasePlayer::ShouldDrawLocalPlayer();
+#endif
+}
+
 // ----------------------------------------------------------------------------- //
 // CWeaponPortalBase implementation. 
 // ----------------------------------------------------------------------------- //
@@ -103,7 +116,7 @@ CWeaponPortalBase::CWeaponPortalBase()
 
 bool CWeaponPortalBase::IsPredicted() const
 { 
-	return false;
+	return (gpGlobals->maxClients < 2) ? false : true;
 }
 
 void CWeaponPortalBase::WeaponSound( WeaponSound_t sound_type, float soundtime /* = 0.0f */ )
@@ -128,12 +141,14 @@ void CWeaponPortalBase::WeaponSound( WeaponSound_t sound_type, float soundtime /
 
 CBasePlayer* CWeaponPortalBase::GetPlayerOwner() const
 {
-	return dynamic_cast< CBasePlayer* >( GetOwner() );
+	CBaseEntity* pOwner = GetOwner();
+	return (pOwner && pOwner->IsPlayer()) ? static_cast<CBasePlayer*>(pOwner) : NULL;
 }
 
 CPortal_Player* CWeaponPortalBase::GetPortalPlayerOwner() const
 {
-	return dynamic_cast< CPortal_Player* >( GetOwner() );
+	CBaseEntity* pOwner = GetOwner();
+	return (pOwner && pOwner->IsPlayer()) ? static_cast<CPortal_Player*>(pOwner) : NULL;
 }
 
 #ifdef CLIENT_DLL
@@ -304,22 +319,22 @@ void CWeaponPortalBase::DrawCrosshair()
 
 void CWeaponPortalBase::DoAnimationEvents( CStudioHdr *pStudioHdr )
 {
-	//// HACK: Because this model renders view and world models in the same frame 
-	//// it's using the wrong studio model when checking the sequences.
-	//C_BasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-	//if ( pPlayer && pPlayer->GetActiveWeapon() == this )
-	//{
-	//	C_BaseViewModel *pViewModel = pPlayer->GetViewModel();
-	//	if ( pViewModel )
-	//	{
-	//		pStudioHdr = pViewModel->GetModelPtr();
-	//	}
-	//}
+	//HACK: Because this model renders view and world models in the same frame 
+	//it's using the wrong studio model when checking the sequences.
+	C_BasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
+	if ( pPlayer && pPlayer->GetActiveWeapon() == this )
+	{
+		C_BaseViewModel *pViewModel = pPlayer->GetViewModel();
+		if ( pViewModel )
+		{
+			pStudioHdr = pViewModel->GetModelPtr();
+		}
+	}
 
-	//if ( pStudioHdr )
-	//{
-	//	BaseClass::DoAnimationEvents( pStudioHdr );
-	//}
+	if ( pStudioHdr )
+	{
+		return BaseClass::DoAnimationEvents( pStudioHdr );
+	}
 	BaseClass::DoAnimationEvents(pStudioHdr);
 }
 
@@ -379,28 +394,6 @@ void CWeaponPortalBase::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Allows the client-side entity to override what the network tells it to use for
-// a model. This is used for third person mode, specifically in HL2 where the
-// the weapon timings are on the view model and not the world model. That means the
-// server needs to use the view model, but the client wants to use the world model.
-//-----------------------------------------------------------------------------
-int CWeaponPortalBase::CalcOverrideModelIndex()
-{ 
-	//C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
-	//if ( localplayer && 
-	//	localplayer == GetOwner() &&
-	//	ShouldDrawLocalPlayerViewModel() )
-	//{
-	//	return BaseClass::CalcOverrideModelIndex();
-	//}
-	//else
-	//{
-	//	return GetWorldModelIndex();
-	//}
-	return GetWorldModelIndex();
-}
-
 #else
 	
 void CWeaponPortalBase::Spawn()
@@ -408,64 +401,27 @@ void CWeaponPortalBase::Spawn()
 	BaseClass::Spawn();
 
 	// Set this here to allow players to shoot dropped weapons
-	SetCollisionGroup( COLLISION_GROUP_WEAPON );
+	SetCollisionGroup(COLLISION_GROUP_WEAPON);
 
 	// Use less bloat for the collision box for this weapon. (bug 43800)
-	CollisionProp()->UseTriggerBounds( true, 20 );
+	CollisionProp()->UseTriggerBounds(true, 20);
 }
-
-void CWeaponPortalBase::	Materialize( void )
-{
-	//if ( IsEffectActive( EF_NODRAW ) )
-	//{
-	//	// changing from invisible state to visible.
-	//	EmitSound( "AlyxEmp.Charge" );
-	//	
-	//	RemoveEffects( EF_NODRAW );
-	//	DoMuzzleFlash();
-	//}
-
-	//if ( HasSpawnFlags( SF_NORESPAWN ) == false )
-	//{
-	//	VPhysicsInitNormal( SOLID_BBOX, GetSolidFlags() | FSOLID_TRIGGER, false );
-	//	SetMoveType( MOVETYPE_VPHYSICS );
-
-	//	//PortalRules()->AddLevelDesignerPlacedObject( this );
-	//}
-
-	//if ( HasSpawnFlags( SF_NORESPAWN ) == false )
-	//{
-	//	if ( GetOriginalSpawnOrigin() == vec3_origin )
-	//	{
-	//		m_vOriginalSpawnOrigin = GetAbsOrigin();
-	//		m_vOriginalSpawnAngles = GetAbsAngles();
-	//	}
-	//}
-
-	//SetPickupTouch();
-
-	//SetThink (NULL);
-	BaseClass::Materialize();
-}
-
 #endif
 
 void CWeaponPortalBase::FireBullets(const FireBulletsInfo_t &info)
-{	
+{
+	//FireBulletsInfo_t modinfo = info;
+
+	//modinfo.m_iPlayerDamage = GetWpnData().m_iPlayerDamage;
+
 	BaseClass::FireBullets(info);
 }
 
 #if defined( CLIENT_DLL )
 
-#include "c_te_effect_dispatch.h"
+
 
 #define NUM_MUZZLE_FLASH_TYPES 4
-
-bool CWeaponPortalBase::OnFireEvent( C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options )
-{
-	return BaseClass::OnFireEvent( pViewModel, origin, angles, event, options );
-}
-
 
 void UTIL_ClipPunchAngleOffset( QAngle &in, const QAngle &punch, const QAngle &clip )
 {
@@ -489,4 +445,3 @@ void UTIL_ClipPunchAngleOffset( QAngle &in, const QAngle &punch, const QAngle &c
 }
 
 #endif
-

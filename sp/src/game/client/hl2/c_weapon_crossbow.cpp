@@ -82,16 +82,17 @@ int C_CrossbowBolt::DrawModel( int flags )
 	// See if we're drawing the motion blur
 	if ( flags & STUDIO_TRANSPARENCY )
 	{
-		float		color[3];
-		IMaterial	*pBlurMaterial = materials->FindMaterial( "effects/muzzleflash1", NULL, false );
-
 		Vector	vecDir = GetAbsOrigin() - m_vecLastOrigin;
 		float	speed = VectorNormalize( vecDir );
 		
 		speed = clamp( speed, 0, 32 );
 		
-		if ( speed > 0 )
+		//mygamepedia: added check for skin here cuz we can reenable motion for cooled down bolt
+		if (speed > 0 && m_nSkin == 1)
 		{
+			float		color[3];
+			IMaterial* pBlurMaterial = materials->FindMaterial("effects/muzzleflash1", NULL, false);
+
 			float	stepSize = MIN( ( speed * 0.5f ), 4.0f );
 
 			Vector	spawnPos = GetAbsOrigin() + ( vecDir * 24.0f );

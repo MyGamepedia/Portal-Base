@@ -26,9 +26,15 @@ extern bool g_bBulletPortalTrace;
 	class CBeam;
 #endif
 
-Color UTIL_Portal_Color( int iPortal );
+static CUtlVector<CUtlString> g_PortalTraceIgnoreList;
 
 void UTIL_Portal_Trace_Filter( class CTraceFilterSimpleClassnameList *traceFilterPortalShot );
+
+void UTIL_Porta_LoadPortalTraceFilterList(const char* szFile);
+
+void CC_Portalbase_Update_Portal_Trace_List(const CCommand& args);
+
+Color UTIL_Portal_Color(int iPortal);
 
 CProp_Portal* UTIL_Portal_FirstAlongRay( const Ray_t &ray, float &fMustBeCloserThan );
 
@@ -86,6 +92,7 @@ bool UTIL_IntersectRayWithPortalOBBAsAABB( const CProp_Portal *pPortal, const Ra
 
 bool UTIL_IsBoxIntersectingPortal( const Vector &vecBoxCenter, const Vector &vecBoxExtents, const Vector &ptPortalCenter, const QAngle &qPortalAngles, float flTolerance = 0.0f );
 bool UTIL_IsBoxIntersectingPortal( const Vector &vecBoxCenter, const Vector &vecBoxExtents, const CProp_Portal *pPortal, float flTolerance = 0.0f );
+bool UTIL_IntersectEntityExtentsWithGivenPortal(const CProp_Portal* pPortal, const CBaseEntity* pEntity);
 
 CProp_Portal *UTIL_IntersectEntityExtentsWithPortal( const CBaseEntity *pEntity );
 

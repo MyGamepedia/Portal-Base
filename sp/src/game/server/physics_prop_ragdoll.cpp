@@ -166,6 +166,15 @@ void CRagdollProp::Spawn( void )
 	SetModel( STRING( GetModelName() ) );
 
 	CStudioHdr *pStudioHdr = GetModelPtr( );
+
+	//mygamepedia: prevents crash when no model for this ent
+	if (!pStudioHdr)
+	{
+		Warning("prop_ragdoll at %.0f %.0f %0.f missing modelname\n", GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z);
+		UTIL_Remove(this);
+		return;
+	}
+
 	if ( pStudioHdr->flags() & STUDIOHDR_FLAGS_NO_FORCED_FADE )
 	{
 		DisableAutoFade();
@@ -191,6 +200,7 @@ void CRagdollProp::Spawn( void )
 	m_lastUpdateTickCount = 0;
 	m_flBlendWeight = 0.0f;
 	m_nOverlaySequence = -1;
+	m_flModelScale = 1.0; //mygamepedia: prevent physics crash on save restore if this thing set for me somehow
 
 	// Unless specified, do not allow this to be dissolved
 	if ( HasSpawnFlags( SF_RAGDOLLPROP_ALLOW_DISSOLVE ) == false )
@@ -233,6 +243,7 @@ void CRagdollProp::OnSave( IEntitySaveUtils *pUtils )
 
 void CRagdollProp::OnRestore()
 {
+	m_flModelScale = 1.0; //mygamepedia: prevent physics crash
 	// rebuild element 0 since it isn't saved
 	// NOTE: This breaks the rules - the pointer needs to get fixed in Restore()
 	m_ragdoll.list[0].pObject = VPhysicsGetObject();
@@ -956,6 +967,15 @@ void CRagdollProp::Teleport( const Vector *newPosition, const QAngle *newAngles,
 	// we need to call the base class and it will teleport our vphysics object, 
 	// so set object 0 up and compute the origin/angles for its new position (base implementation has side effects)
 	VPhysicsSwapObject( m_ragdoll.list[0].pObject );
+
+	//mygamepedia: save from crash with missing models
+	if (!m_ragdoll.list[0].pObject)
+	{
+		Warning("CRagdollProp::Teleport: NULLPRT IN m_ragdoll.list[0].pObject! The ragdoll model is missing?! REMOVED!!!\n");
+		UTIL_Remove(this);
+		return;
+	}
+
 	matrix3x4_t obj0source, obj0Target;
 	m_ragdoll.list[0].pObject->GetPositionMatrix( &obj0source );
 	ConcatTransforms( xform, obj0source, obj0Target );
@@ -1655,6 +1675,15 @@ void CRagdollProp::GetAngleOverrideFromCurrentState( char *pOut, int size )
 		CFmtStr str("%d,%.2f %.2f %.2f", i, m_ragAngles[i].x, m_ragAngles[i].y, m_ragAngles[i].z );
 		Q_strncat( pOut, str, size, COPY_ALL_CHARACTERS );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Server ragdolls cause physics crash on save restore with model scale, prevent.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+void CRagdollProp::SetModelScale(float scale, float change_duration /*= 0.0f*/)
+{
+	return;
 }
 
 void CRagdollProp::DisableMotion( void )

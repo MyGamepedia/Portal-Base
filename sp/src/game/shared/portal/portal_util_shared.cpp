@@ -21,6 +21,7 @@
 	#include "c_portal_player.h"
 #endif
 #include "PortalSimulation.h"
+#include "filesystem.h"
 
 bool g_bAllowForcePortalTrace = false;
 bool g_bForcePortalTrace = false;
@@ -143,108 +144,85 @@ const matrix3x4_t* CTransformedCollideable::GetRootParentToWorldTransform() cons
 	return &m_ReferencedVars.m_matRootParentToWorldTransform;
 }
 
-Color UTIL_Portal_Color( int iPortal )
+//-----------------------------------------------------------------------------
+// Purpose: Returns wanted colors for portals and portalgun, 0 for gravity beam, 1 for blue portal (portal 1), 2 for orange portal (portal 2).
+// Used by crosshair and some sprites on the portalgun, doesn't affect portals, gravity beams and other portalgun's sprites.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+Color UTIL_Portal_Color(int iPortal)
 {
-	switch ( iPortal )
+	switch (iPortal)
 	{
 		case 0:
 			// GRAVITY BEAM
-			return Color( 242, 202, 167, 255 );
+			return Color(242, 202, 167, 255);
 
 		case 1:
 			// PORTAL 1
-			return Color( 64, 160, 255, 255 );
+			return Color(64, 160, 255, 255);
 
 		case 2:
 			// PORTAL 2
-			return Color( 255, 160, 32, 255 );
+			return Color(255, 160, 32, 255);
 	}
 
-	return Color( 255, 255, 255, 255 );
+	return Color(255, 255, 255, 255);
 }
 
-void UTIL_Portal_Trace_Filter( CTraceFilterSimpleClassnameList *traceFilterPortalShot )
+//-----------------------------------------------------------------------------
+// Purpose: Used by portalbase_update_portal_trace_list to refresh the list.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+static void PortalbaseUpdatePortalTraceListChanged(IConVar* pConVar, const char* pOldString, float flOldValue)
 {
-	traceFilterPortalShot->AddClassnameToIgnore( "prop_physics" );
-	traceFilterPortalShot->AddClassnameToIgnore( "func_physbox" );
-	traceFilterPortalShot->AddClassnameToIgnore( "npc_portal_turret_floor" );
-	traceFilterPortalShot->AddClassnameToIgnore( "prop_energy_ball" );
-	traceFilterPortalShot->AddClassnameToIgnore( "npc_security_camera" );
-	traceFilterPortalShot->AddClassnameToIgnore( "player" );
-	traceFilterPortalShot->AddClassnameToIgnore( "simple_physics_prop" );
-	traceFilterPortalShot->AddClassnameToIgnore( "simple_physics_brush" );
-	traceFilterPortalShot->AddClassnameToIgnore( "prop_ragdoll" );
-	traceFilterPortalShot->AddClassnameToIgnore( "prop_glados_core" );
-	traceFilterPortalShot->AddClassnameToIgnore( "updateitem2" );
-	traceFilterPortalShot->AddClassnameToIgnore("npc_turret_floor");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_manhack");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_rollermine");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_metropolice");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_combine");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_citizen");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_alyx");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_antlion");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_antlion_grub");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_antlionguard");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_barney");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_breen");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_combine_s");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_dog");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_fastzombie");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_fisherman");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_headcrab");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_headcrab_fast");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_hunter");
-	traceFilterPortalShot->AddClassnameToIgnore("hunter_flechette");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_kleiner");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_magnusson");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_monk");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_mossman");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_poisonzombie");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_stalker");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_vortigaunt");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_zombie");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_zombie_torso");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_zombine");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_357");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_ar2");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_bugbait");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_crossbow");
-	traceFilterPortalShot->AddClassnameToIgnore("crossbow_bolt");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_crowbar");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_frag");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_pistol");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_rpg");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_shotgun");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_smg1");
-	traceFilterPortalShot->AddClassnameToIgnore("prop_stickybomb");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_striderbuster");
-	traceFilterPortalShot->AddClassnameToIgnore("weapon_physcannon");
-	traceFilterPortalShot->AddClassnameToIgnore("item_box_srounds");	
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_pistol");
-	traceFilterPortalShot->AddClassnameToIgnore("item_large_box_srounds");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_pistol_large");
-	traceFilterPortalShot->AddClassnameToIgnore("item_box_mrounds");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_smg1");
-	traceFilterPortalShot->AddClassnameToIgnore("item_large_box_mrounds");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_smg1_large");
-	traceFilterPortalShot->AddClassnameToIgnore("item_box_lrounds");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_ar2");
-	traceFilterPortalShot->AddClassnameToIgnore("item_large_box_lrounds");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_ar2_large");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_357");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_357_large");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_crossbow");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ml_grenade");
-	traceFilterPortalShot->AddClassnameToIgnore("item_rpg_round");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ar2_grenade");
-	traceFilterPortalShot->AddClassnameToIgnore("item_box_buckshot");
-	traceFilterPortalShot->AddClassnameToIgnore("item_ammo_ar2_altfire");
-	traceFilterPortalShot->AddClassnameToIgnore("item_battery");
-	traceFilterPortalShot->AddClassnameToIgnore("item_crate");
-	traceFilterPortalShot->AddClassnameToIgnore("npc_bullseye");
+	Msg("Portal trace filter has been changed!\n");
+	ConVarRef var(pConVar);
+	UTIL_Porta_LoadPortalTraceFilterList(var.GetString());
 }
 
+ConVar portalbase_portal_trace_filter_file("portalbase_portal_trace_filter_file", "portalbase_portal_trace_filter",
+	FCVAR_REPLICATED,
+	"Script file with classnames for portal trace filter to ignore.",
+	PortalbaseUpdatePortalTraceListChanged
+);
+
+//-----------------------------------------------------------------------------
+// Purpose: Loads a list of passable entities for portal projectile.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+void UTIL_Porta_LoadPortalTraceFilterList(const char* szFile)
+{
+	g_PortalTraceIgnoreList.Purge();
+
+	KeyValues* kv = new KeyValues("PortalTraceFilter");
+
+	char filename[512];
+	Q_snprintf(filename, sizeof(filename), "scripts/%s.txt", szFile);
+
+	if (kv->LoadFromFile(filesystem, filename, "MOD"))
+	{
+		//BUG: it needs at least two classes in the file to load without errors (still will work with < 2)
+		for (KeyValues* sub = kv->GetFirstSubKey(); sub; sub = sub->GetNextKey())
+		{
+			g_PortalTraceIgnoreList.AddToTail(sub->GetName());
+		}
+	}
+
+	kv->deleteThis();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Adds a list of passable entities for portal projectile into trace filter.
+// Our in Portal-Base version using dynamic list of classes via file, instead of a predefined/hardcoded classses.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+void UTIL_Portal_Trace_Filter(CTraceFilterSimpleClassnameList* traceFilterPortalShot)
+{
+	for (int i = 0; i < g_PortalTraceIgnoreList.Count(); ++i)
+	{
+		traceFilterPortalShot->AddClassnameToIgnore(g_PortalTraceIgnoreList[i]);
+	}
+}
 
 CProp_Portal* UTIL_Portal_FirstAlongRay( const Ray_t &ray, float &fMustBeCloserThan )
 {
@@ -1589,6 +1567,11 @@ bool UTIL_IsBoxIntersectingPortal( const Vector &vecBoxCenter, const Vector &vec
 	return UTIL_IsBoxIntersectingPortal( vecBoxCenter, vecBoxExtents, pPortal->GetAbsOrigin(), pPortal->GetAbsAngles(), flTolerance );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: This calcs if given ent touches any existing portals by their actual plane size.
+// Output: Pointer to portal that given object touches, or NULL if none.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
 CProp_Portal *UTIL_IntersectEntityExtentsWithPortal( const CBaseEntity *pEntity )
 {
 	int iPortalCount = CProp_Portal_Shared::AllPortals.Count();
@@ -1613,6 +1596,25 @@ CProp_Portal *UTIL_IntersectEntityExtentsWithPortal( const CBaseEntity *pEntity 
 	}
 
 	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: The same as UTIL_IntersectEntityExtentsWithPortal, but only given portal and given tolerance.
+// Output: True if touched, false if don't.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+bool UTIL_IntersectEntityExtentsWithGivenPortal(const CProp_Portal* pPortal, const CBaseEntity* pEntity)
+{
+	Vector vMin, vMax;
+	pEntity->CollisionProp()->WorldSpaceAABB(&vMin, &vMax);
+	Vector ptCenter = (vMin + vMax) * 0.5;
+	Vector vExtents = (vMax - vMin) * 0.5;
+
+
+	if (pPortal->m_bActivated && (pPortal->m_hLinkedPortal.Get() != NULL) && UTIL_IsBoxIntersectingPortal(ptCenter, vExtents, pPortal))
+		return true;
+
+	return false;
 }
 
 void UTIL_Portal_NDebugOverlay( const Vector &ptPortalCenter, const QAngle &qPortalAngles, int r, int g, int b, int a, bool noDepthTest, float duration )

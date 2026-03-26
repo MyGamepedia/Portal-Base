@@ -50,6 +50,7 @@ CUtlVector< CHandle<CTriggerMultiple> >	g_hWeaponFireTriggers;
 
 extern CServerGameDLL	g_ServerGameDLL;
 extern bool				g_fGameOver;
+extern ConVar			ai_force_serverside_ragdoll;
 ConVar showtriggers( "showtriggers", "0", FCVAR_CHEAT, "Shows trigger brushes" );
 
 bool IsTriggerClass( CBaseEntity *pEntity );
@@ -4787,13 +4788,16 @@ LINK_ENTITY_TO_CLASS( trigger_serverragdoll, CServerRagdollTrigger );
 void CServerRagdollTrigger::Spawn( void )
 {
 	BaseClass::Spawn();
-
 	InitTrigger();
 }
 
 void CServerRagdollTrigger::StartTouch(CBaseEntity *pOther)
 {
 	BaseClass::StartTouch( pOther );
+
+	//mygamepedia: prevent this thing from reenabling client side ragdolls when not wanted
+	if (ai_force_serverside_ragdoll.GetBool())
+		return;
 
 	if ( pOther->IsPlayer() )
 		return;
@@ -4809,6 +4813,10 @@ void CServerRagdollTrigger::StartTouch(CBaseEntity *pOther)
 void CServerRagdollTrigger::EndTouch(CBaseEntity *pOther)
 {
 	BaseClass::EndTouch( pOther );
+
+	//mygamepedia: prevent this thing from reenabling client side ragdolls when not wanted
+	if (ai_force_serverside_ragdoll.GetBool())
+		return;
 
 	if ( pOther->IsPlayer() )
 		return;

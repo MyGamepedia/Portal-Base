@@ -26,6 +26,7 @@
 #include "collisionutils.h"
 #include "iservervehicle.h"
 #include "func_break.h"
+#include "items.h"
 
 #ifdef HL2MP
 	#include "hl2mp_gamerules.h"
@@ -35,6 +36,8 @@
 #include "tier0/memdbgon.h"
 
 extern int	gEvilImpulse101;		// In Player.h
+
+extern ConVar sv_portalbase_item_touch_area;
 
 // -----------------------------------------
 //	Sprite Index info
@@ -481,11 +484,24 @@ void CBaseCombatWeapon::FallInit( void )
 	SetModel( GetWorldModel() );
 	VPhysicsDestroyObject();
 
-	if ( !VPhysicsInitNormal( SOLID_BBOX, GetSolidFlags() | FSOLID_TRIGGER, false ) )
+	int iSolidFlag = GetSolidFlags();
+
+	if (!sv_portalbase_item_touch_area.GetBool())
+		iSolidFlag |= FSOLID_TRIGGER;
+
+	if ( !VPhysicsInitNormal( SOLID_BBOX, iSolidFlag, false ) )
 	{
 		SetMoveType( MOVETYPE_FLYGRAVITY );
-		SetSolid( SOLID_BBOX );
-		AddSolidFlags( FSOLID_TRIGGER );
+
+		if (!sv_portalbase_item_touch_area.GetBool())
+		{
+			SetSolid(SOLID_BBOX);
+		}
+		else
+			SetSolid(SOLID_VPHYSICS);
+
+		if (!sv_portalbase_item_touch_area.GetBool())
+			AddSolidFlags( FSOLID_TRIGGER );
 	}
 	else
 	{
@@ -586,7 +602,15 @@ void CBaseCombatWeapon::Materialize( void )
 	}
 #else
 	SetSolid( SOLID_BBOX );
-	AddSolidFlags( FSOLID_TRIGGER );
+
+	if (!sv_portalbase_item_touch_area.GetBool())
+	{
+		AddSolidFlags(FSOLID_TRIGGER);
+	}
+	else if (m_hTouchArea.Get())
+	{
+		static_cast<CEnvTouchArea*>(m_hTouchArea.Get())->EnableTouchArea();
+	}
 #endif
 
 	SetPickupTouch();

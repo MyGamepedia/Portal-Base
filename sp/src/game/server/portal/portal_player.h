@@ -17,6 +17,15 @@
 //=============================================================================
 // >> Portal_Player
 //=============================================================================
+CBaseEntity* g_pLastCombineSpawn = NULL;
+CBaseEntity* g_pLastRebelSpawn = NULL;
+
+enum
+{
+	TEAM_COMBINE = 2,
+	TEAM_REBELS,
+};
+
 class CPortal_Player : public CHL2_Player
 {
 public:
@@ -86,6 +95,8 @@ public:
 	bool m_bSilentDropAndPickup;
 
 	void SuppressCrosshair( bool bState ) { m_bSuppressingCrosshair = bState; }
+
+	virtual bool Weapon_CanUse(CBaseCombatWeapon* pWeapon); //mygamepedia: done for tests with stunstick
 	
 private:
 	CSoundPatch		*m_pWooshSound;
@@ -111,7 +122,8 @@ private:
 
 	mutable Vector m_vWorldSpaceCenterHolder; //WorldSpaceCenter() returns a reference, need an actual value somewhere
 
-
+	//mygamepedia: taked from hl2dm
+	float m_flSlamProtectTime;
 
 public:
 
@@ -122,11 +134,9 @@ public:
 	friend class CProp_Portal;
 
 
-#ifdef PORTAL_MP
 public:
 	virtual CBaseEntity* EntSelectSpawnPoint( void );
 	void PickTeam( void );
-#endif
 };
 
 inline CPortal_Player *ToPortalPlayer( CBaseEntity *pEntity )

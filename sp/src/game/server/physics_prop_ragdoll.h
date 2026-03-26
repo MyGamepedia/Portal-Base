@@ -94,6 +94,7 @@ public:
 	CBaseEntity*	GetKiller() { return m_hKiller; }
 	void			SetKiller( CBaseEntity *pKiller ) { m_hKiller = pKiller; }
 	void			GetAngleOverrideFromCurrentState( char *pOut, int size );
+	void			SetModelScale(float scale, float change_duration /*= 0.0f*/);
 
 	void			DisableMotion( void );
 

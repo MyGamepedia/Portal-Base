@@ -11,8 +11,11 @@
 #include "portal/weapon_physcannon.h"
 #include "ai_basenpc.h"
 #include "prop_portal_shared.h"
+#include "team.h"
+//#include "portal_mp_gamerules.h"
 #include "vphysics/player_controller.h"
 #include "physicsshadowclone.h"
+#include "player.h"
 
 LINK_ENTITY_TO_CLASS( player, CPortal_Player );
 
@@ -161,9 +164,8 @@ void CPortal_Player::Spawn(void)
 
 	SetPlayerUnderwater(false);
 
-#ifdef PORTAL_MP
-	PickTeam();
-#endif
+	if (gpGlobals->maxClients > 1)
+		PickTeam();
 }
 
 /*
@@ -1340,35 +1342,39 @@ void CPortal_Player::SetupVisibility( CBaseEntity *pViewEntity, unsigned char *p
 	PortalSetupVisibility( this, area, pvs, pvssize );
 }
 
-
-#ifdef PORTAL_MP
-
+//-----------------------------------------------------------------------------
+// Purpose: This is player spawn point select from portal mp test but with proper sp support, mainly hl2dm copy. - MyGamepedia
+//-----------------------------------------------------------------------------
 CBaseEntity* CPortal_Player::EntSelectSpawnPoint( void )
 {
+	//spawn as in sp
+	if (gpGlobals->maxClients < 2)
+		return BaseClass::EntSelectSpawnPoint();
+
 	CBaseEntity *pSpot = NULL;
 	CBaseEntity *pLastSpawnPoint = g_pLastSpawn;
 	edict_t		*player = edict();
 	const char *pSpawnpointName = "info_player_start";
 
-	/*if ( HL2MPRules()->IsTeamplay() == true )
+	if ( g_pGameRules->IsTeamplay() == true)
 	{
-	if ( GetTeamNumber() == TEAM_COMBINE )
-	{
-	pSpawnpointName = "info_player_combine";
-	pLastSpawnPoint = g_pLastCombineSpawn;
-	}
-	else if ( GetTeamNumber() == TEAM_REBELS )
-	{
-	pSpawnpointName = "info_player_rebel";
-	pLastSpawnPoint = g_pLastRebelSpawn;
-	}
+		if ( GetTeamNumber() == TEAM_COMBINE )
+		{
+			pSpawnpointName = "info_player_combine";
+			pLastSpawnPoint = g_pLastCombineSpawn;
+		}
+		else if ( GetTeamNumber() == TEAM_REBELS )
+		{
+			pSpawnpointName = "info_player_rebel";
+			pLastSpawnPoint = g_pLastRebelSpawn;
+		}
 
-	if ( gEntList.FindEntityByClassname( NULL, pSpawnpointName ) == NULL )
-	{
-	pSpawnpointName = "info_player_deathmatch";
-	pLastSpawnPoint = g_pLastSpawn;
+		if ( gEntList.FindEntityByClassname( NULL, pSpawnpointName ) == NULL )
+		{
+			pSpawnpointName = "info_player_deathmatch";
+			pLastSpawnPoint = g_pLastSpawn;
+		}
 	}
-	}*/
 
 	pSpot = pLastSpawnPoint;
 	// Randomize the start spot
@@ -1423,27 +1429,33 @@ CBaseEntity* CPortal_Player::EntSelectSpawnPoint( void )
 
 ReturnSpot:
 
-	/*if ( HL2MPRules()->IsTeamplay() == true )
+	if ( g_pGameRules->IsTeamplay() == true )
 	{
-	if ( GetTeamNumber() == TEAM_COMBINE )
-	{
-	g_pLastCombineSpawn = pSpot;
+		if ( GetTeamNumber() == TEAM_COMBINE )
+		{
+			g_pLastCombineSpawn = pSpot;
+		}
+		else if ( GetTeamNumber() == TEAM_REBELS ) 
+		{
+			g_pLastRebelSpawn = pSpot;
+		}
 	}
-	else if ( GetTeamNumber() == TEAM_REBELS ) 
-	{
-	g_pLastRebelSpawn = pSpot;
-	}
-	}*/
 
 	g_pLastSpawn = pSpot;
 
-	//m_flSlamProtectTime = gpGlobals->curtime + 0.5;
+	m_flSlamProtectTime = gpGlobals->curtime + 0.5;
 
 	return pSpot;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Pick the best team in tdm. - MyGamepedia
+//-----------------------------------------------------------------------------
 void CPortal_Player::PickTeam( void )
 {
+	if (gpGlobals->maxClients < 2 || !g_pGameRules->IsTeamplay())
+		return;
+
 	//picks lowest or random
 	CTeam *pCombine = g_Teams[TEAM_COMBINE];
 	CTeam *pRebels = g_Teams[TEAM_REBELS];
@@ -1461,7 +1473,24 @@ void CPortal_Player::PickTeam( void )
 	}
 }
 
+ConVar sv_portalbase_use_stunstick_for_battery("sv_portalbase_use_stunstick_for_armor", "1", FCVAR_NONE);
+
+//-----------------------------------------------------------------------------
+// Allow stunstick by player touch if convar allow for tests. - MyGamepedia
+//-----------------------------------------------------------------------------
+bool CPortal_Player::Weapon_CanUse(CBaseCombatWeapon* pWeapon)
+{
+#ifndef HL2MP	
+	if (pWeapon->ClassMatches("weapon_stunstick") && sv_portalbase_use_stunstick_for_battery.GetBool())
+	{
+		if (ApplyBattery(0.5))
+			UTIL_Remove(pWeapon);
+		return false;
+	}
 #endif
+
+	return CBasePlayer::Weapon_CanUse(pWeapon); //CBasePlayer!!! Not BaseClass so we don't run similar logic again
+}
 
 CON_COMMAND( startadmiregloves, "Starts the admire gloves animation." )
 {

@@ -985,6 +985,11 @@ bool CBaseEntity::WillThink()
 // returns TICK_NEVER_THINK if no think functions are scheduled
 int CBaseEntity::GetFirstThinkTick()
 {
+	//mygamepedia: it crashed for me when I was working on items
+	//if something is wrong here, the console will let you know about it
+	//if (this == NULL)
+	//	return TICK_NEVER_THINK;
+
 	int minTick = TICK_NEVER_THINK;
 	if ( m_nNextThinkTick > 0 )
 	{
@@ -2451,7 +2456,9 @@ void CBaseEntity::ApplyAbsVelocityImpulse( const Vector &inVecImpulse )
 
 		if ( GetMoveType() == MOVETYPE_VPHYSICS )
 		{
-			VPhysicsGetObject()->AddVelocity( &vecImpulse, NULL );
+			//mygamepedia: this crashed here few times when I was working on bolts
+			if (VPhysicsGetObject())
+				VPhysicsGetObject()->AddVelocity( &vecImpulse, NULL );
 		}
 		else
 		{

@@ -17,6 +17,8 @@
 #include "haptics/haptic_utils.h"
 #ifdef CLIENT_DLL
 	#include "prediction.h"
+#else
+	#include "items.h"
 #endif
 // NVNT end extra includes
 
@@ -50,6 +52,7 @@
 #define HIDEWEAPON_THINK_CONTEXT			"BaseCombatWeapon_HideThink"
 
 extern bool UTIL_ItemCanBeTouchedByPlayer( CBaseEntity *pItem, CBasePlayer *pPlayer );
+extern ConVar sv_portalbase_item_touch_area;
 
 #if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
 #ifdef _DEBUG
@@ -202,10 +205,31 @@ void CBaseCombatWeapon::Spawn( void )
 	// been hand-placed by level designers. We only want to remove
 	// weapons that have been dropped by NPC's.
 	SetRemoveable( false );
-#endif
 
 	// Bloat the box for player pickup
-	CollisionProp()->UseTriggerBounds( true, 36 );
+	if (!sv_portalbase_item_touch_area.GetBool())
+	{
+		CollisionProp()->UseTriggerBounds(true, 36);
+	}
+	else if (!GetOwner()) //don't appear if i have owner
+	{
+		CBaseEntity* pEntity = CBaseEntity::Create("env_touch_area", GetLocalOrigin(), GetLocalAngles());
+		if (pEntity)
+		{
+			CEnvTouchArea* pArea = static_cast<CEnvTouchArea*>(pEntity);
+
+			pArea->SetModel(GetModelName().ToCStr());
+			pArea->CreateItemVPhysicsObject();
+			pArea->CollisionProp()->UseTriggerBounds(true, 36);
+			pArea->FollowEntity(this, false);
+			pArea->SetPickupWeapon(this);
+			pArea->SetPickupType(PUT_Weapon);
+			pArea->SetTouch(&CEnvTouchArea::ItemTouch);
+			pArea->EnableTouchArea();
+			m_hTouchArea = pArea;
+		}
+	}
+#endif
 
 	// Use more efficient bbox culling on the client. Otherwise, it'll setup bones for most
 	// characters even when they're not in the frustum.
@@ -676,6 +700,27 @@ void CBaseCombatWeapon::Drop( const Vector &vecVelocity )
 	RemoveEffects( EF_NODRAW );
 	FallInit();
 	SetGroundEntity( NULL );
+
+	if (sv_portalbase_item_touch_area.GetBool())
+	{
+		RemoveSolidFlags(FSOLID_TRIGGER);
+		CBaseEntity* pEntity = CBaseEntity::Create("env_touch_area", GetLocalOrigin(), GetLocalAngles());
+		if (pEntity)
+		{
+			CEnvTouchArea* pArea = static_cast<CEnvTouchArea*>(pEntity);
+
+			pArea->SetModel(GetModelName().ToCStr());
+			pArea->CreateItemVPhysicsObject();
+			pArea->CollisionProp()->UseTriggerBounds(true, 36);
+			pArea->FollowEntity(this, false);
+			pArea->SetPickupWeapon(this);
+			pArea->SetPickupType(PUT_Weapon);
+			pArea->SetTouch(&CEnvTouchArea::ItemTouch);
+			pArea->EnableTouchArea();
+			m_hTouchArea = pArea;
+		}
+	}
+
 	SetThink( &CBaseCombatWeapon::SetPickupTouch );
 	SetTouch(NULL);
 
@@ -723,6 +768,9 @@ void CBaseCombatWeapon::OnPickedUp( CBaseCombatCharacter *pNewOwner )
 {
 #if !defined( CLIENT_DLL )
 	RemoveEffects( EF_ITEM_BLINK );
+
+	if (m_hTouchArea.Get())
+		UTIL_Remove(m_hTouchArea.Get());
 
 	if( pNewOwner->IsPlayer() )
 	{
@@ -815,9 +863,13 @@ void CBaseCombatWeapon::GiveTo( CBaseEntity *pOther )
 void CBaseCombatWeapon::DefaultTouch( CBaseEntity *pOther )
 {
 #if !defined( CLIENT_DLL )
-	// Can't pick up dissolving weapons
-	if ( IsDissolving() )
-		return;
+
+	if (!sv_portalbase_item_touch_area.GetBool())
+	{
+		// Can't pick up dissolving weapons
+		if (IsDissolving())
+			return;
+	}
 
 	// if it's not a player, ignore
 	CBasePlayer *pPlayer = ToBasePlayer(pOther);
@@ -1003,6 +1055,14 @@ void CBaseCombatWeapon::Equip( CBaseCombatCharacter *pOwner )
 		m_flNextSecondaryAttack = gpGlobals->curtime;
 		SetModel( GetWorldModel() );
 	}
+
+#if !defined( CLIENT_DLL )
+	//mygamepedia: remove my touch area as i have owner now
+	if (m_hTouchArea.Get())
+	{
+		UTIL_Remove(m_hTouchArea.Get());
+	}
+#endif
 }
 
 void CBaseCombatWeapon::SetActivity( Activity act, float duration ) 
@@ -2441,6 +2501,17 @@ Activity CBaseCombatWeapon::ActivityOverride( Activity baseAct, bool *pRequired 
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Removes touch area so the player can't pick up this weapon when cleansed. 
+//-----------------------------------------------------------------------------
+void CBaseCombatWeapon::UpdateOnRemove()
+{
+#ifndef CLIENT_DLL
+	if (m_hTouchArea.Get())
+		UTIL_Remove(m_hTouchArea.Get());
+#endif // !CLIENT_DLL
+}
+
+//-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
 CDmgAccumulator::CDmgAccumulator( void )
@@ -2620,6 +2691,7 @@ BEGIN_DATADESC( CBaseCombatWeapon )
 
 	DEFINE_FIELD( m_flUnlockTime,		FIELD_TIME ),
 	DEFINE_FIELD( m_hLocker,			FIELD_EHANDLE ),
+	DEFINE_FIELD(m_hTouchArea,			FIELD_EHANDLE),
 
 	//	DEFINE_FIELD( m_iViewModelIndex, FIELD_INTEGER ),
 	//	DEFINE_FIELD( m_iWorldModelIndex, FIELD_INTEGER ),

@@ -456,6 +456,8 @@ protected:
 public:
 	CNetworkVar( float, m_flNextAttack );			// cannot attack again until this time
 
+	EHANDLE			m_hMyCorpuse; //mygamepedia: my server ragdoll i created 
+
 #ifdef GLOWS_ENABLE
 protected:
 	CNetworkVar( bool, m_bGlowEnabled );

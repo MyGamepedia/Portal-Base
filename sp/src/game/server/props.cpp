@@ -644,7 +644,7 @@ void CPhysicsProp::HandleAnyCollisionInteractions( int index, gamevcollisioneven
 
 void CBreakableProp::StickAtPosition( const Vector &stickPosition, const Vector &savePosition, const QAngle &saveAngles )
 {
-	if ( !VPhysicsGetObject()->IsMotionEnabled() )
+	if (!VPhysicsGetObject()->IsMotionEnabled())
 		return;
 
 	EmitSound("Metal.SawbladeStick");
@@ -660,8 +660,7 @@ void CBreakableProp::StickAtPosition( const Vector &stickPosition, const Vector 
 	SetCollisionGroup(COLLISION_GROUP_INTERACTIVE_DEBRIS);
 #endif
 
-	//mygamepedia: HACK!? this is unused anyway, this help us to make sure that this is a sticky prop
-	SetFriction(1.01f);
+	SetStickied(true);
 }
 
 //-----------------------------------------------------------------------------
@@ -704,9 +703,10 @@ void CBreakableProp::HandleInteractionStick( int index, gamevcollisionevent_t *p
 				Vector vecEmbed = pEvent->preVelocity[ index ];
 				VectorNormalize( vecEmbed );
 				vecEmbed *= 8;
-
 				position += vecEmbed;
-				g_PostSimulationQueue.QueueCall( this, &CBreakableProp::StickAtPosition, position, savePosition, angles );
+
+				//mygamepedia: this was very inconsistent with delayed call now we call it here and now
+				StickAtPosition(position, savePosition, angles); 
 			}
 		}
 	}
@@ -2756,7 +2756,7 @@ void CPhysicsProp::OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t r
 		if( HasInteraction( PROPINTER_PHYSGUN_WORLD_STICK ) )
 		{
 			SetCollisionGroup( COLLISION_GROUP_INTERACTIVE_DEBRIS );
-			SetFriction(1.00f);
+			SetStickied(false);
 		}
 	}
 
@@ -4720,6 +4720,8 @@ public:
 	float	GetOpenInterval();
 
 	bool	OverridePropdata() { return true; }
+
+	virtual bool IsPortalNonTeleportable() { return true; }
 
 	void	InputSetSpeed(inputdata_t &inputdata);
 

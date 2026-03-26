@@ -215,6 +215,8 @@ void CNPC_FloorTurret::UpdateOnRemove( void )
 		m_hEyeGlow = NULL;
 	}
 
+	StopSound("NPC_FloorTurret.Alarm"); //mygamedia: this prevent the sound loop when cleansed
+
 	BaseClass::UpdateOnRemove();
 }
 
@@ -305,7 +307,7 @@ void CNPC_FloorTurret::Spawn( void )
 	m_iHealth		= 100;
 	m_iMaxHealth	= 100;
 
-	AddEFlags( EFL_NO_DISSOLVE );
+	AddEFlags( EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL); //mygamepedia: fixed megaphyscannon rag clones
 
 	SetPoseParameter( m_poseAim_Yaw, 0 );
 	SetPoseParameter( m_poseAim_Pitch, 0 );
