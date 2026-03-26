@@ -195,7 +195,7 @@ void CItem::Spawn( void )
 	{
 		CollisionProp()->UseTriggerBounds(true, ITEM_PICKUP_BOX_BLOAT);
 	}
-	else
+	else if (!IsMarkedForDeletion()) //don't if should be removed
 	{
 		CBaseEntity* pEntity = CBaseEntity::Create("env_touch_area", GetLocalOrigin(), GetLocalAngles());
 		if (pEntity)

@@ -171,7 +171,13 @@ void CBaseCombatWeapon::Spawn( void )
 
 	BaseClass::Spawn();
 
-	SetSolid( SOLID_BBOX );
+	if (sv_portalbase_item_touch_area.GetBool())
+	{
+		SetSolid(SOLID_VPHYSICS);
+	}
+	else
+		SetSolid(SOLID_BBOX);
+
 	m_flNextEmptySoundTime = 0.0f;
 
 	// Weapons won't show up in trace calls if they are being carried...
@@ -211,7 +217,7 @@ void CBaseCombatWeapon::Spawn( void )
 	{
 		CollisionProp()->UseTriggerBounds(true, 36);
 	}
-	else if (!GetOwner()) //don't appear if i have owner
+	else if (!GetOwner() && !IsMarkedForDeletion()) //don't appear if i have owner or should be removed
 	{
 		CBaseEntity* pEntity = CBaseEntity::Create("env_touch_area", GetLocalOrigin(), GetLocalAngles());
 		if (pEntity)
@@ -2508,6 +2514,8 @@ void CBaseCombatWeapon::UpdateOnRemove()
 #ifndef CLIENT_DLL
 	if (m_hTouchArea.Get())
 		UTIL_Remove(m_hTouchArea.Get());
+
+	BaseClass::UpdateOnRemove();
 #endif // !CLIENT_DLL
 }
 

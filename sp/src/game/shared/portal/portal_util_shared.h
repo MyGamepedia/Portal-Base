@@ -26,8 +26,6 @@ extern bool g_bBulletPortalTrace;
 	class CBeam;
 #endif
 
-static CUtlVector<CUtlString> g_PortalTraceIgnoreList;
-
 void UTIL_Portal_Trace_Filter( class CTraceFilterSimpleClassnameList *traceFilterPortalShot );
 
 void UTIL_Porta_LoadPortalTraceFilterList(const char* szFile);

@@ -27,6 +27,8 @@ bool g_bAllowForcePortalTrace = false;
 bool g_bForcePortalTrace = false;
 bool g_bBulletPortalTrace = true; // makes metrocops shoot through portals (sometimes)
 
+static CUtlVector<CUtlString> g_PortalTraceIgnoreList;
+
 ConVar sv_portal_trace_vs_world ("sv_portal_trace_vs_world", "1", FCVAR_REPLICATED | FCVAR_CHEAT, "Use traces against portal environment world geometry" );
 ConVar sv_portal_trace_vs_displacements ("sv_portal_trace_vs_displacements", "1", FCVAR_REPLICATED | FCVAR_CHEAT, "Use traces against portal environment displacement geometry" );
 ConVar sv_portal_trace_vs_holywall ("sv_portal_trace_vs_holywall", "1", FCVAR_REPLICATED | FCVAR_CHEAT, "Use traces against portal environment carved wall" );
