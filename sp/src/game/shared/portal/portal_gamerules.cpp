@@ -29,8 +29,6 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar portalbase_portal_trace_filter_file;
-
 
 REGISTER_GAMERULES_CLASS( CPortalGameRules );
 
@@ -82,6 +80,7 @@ extern ConVar	sk_autoaim_scale2;
 
 #if !defined ( CLIENT_DLL )
 extern ConVar	sv_alternateticks;
+extern ConVar	sv_portalbase_portal_trace_filter_file;
 #endif // !CLIENT_DLL
 
 #define PORTAL_WEIGHT_BOX_MODEL_NAME "models/props/metal_box.mdl"
@@ -328,16 +327,10 @@ bool CPortalGameRules::Init()
 #if !defined ( CLIENT_DLL )
 	// Portal never wants alternate ticks. Some low end hardware sets it in dxsupport.cfg so this will catch those cases.
 	sv_alternateticks.SetValue( 0 );
-#endif // !CLIENT_DLL
 
 	//mygamepedia: on game start, load portalgun tracer filter here
-	UTIL_Porta_LoadPortalTraceFilterList(portalbase_portal_trace_filter_file.GetString());
-
-	//mygamepedia: HACK!? this connects func and convar so the engine doesn't complain about different func
-	//pointers, not sure if there is a better way but for our goals this will work well
-	//as if portalgun exists, that means gamerules proxy exists too 
-	if (!bLoadedPortalTraceByGamerules)
-		portalbase_portal_trace_filter_file.InstallChangeCallback(PortalbaseUpdatePortalTraceListChanged);
+	UTIL_Porta_LoadPortalTraceFilterList(sv_portalbase_portal_trace_filter_file.GetString());
+#endif
 
 	return BaseClass::Init();
 }

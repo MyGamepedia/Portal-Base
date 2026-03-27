@@ -177,14 +177,42 @@ Color UTIL_Portal_Color(int iPortal)
 //-----------------------------------------------------------------------------
 void PortalbaseUpdatePortalTraceListChanged(IConVar* pConVar, const char* pOldString, float flOldValue)
 {
-	Msg("Portal trace filter has been changed!\n");
 	ConVarRef var(pConVar);
+
+#ifndef CLIENT_DLL
+	Msg("Portal trace filter has been changed on server!\n");
+
+	//run on server
 	UTIL_Porta_LoadPortalTraceFilterList(var.GetString());
+
+	char szReturnString[512];
+	Q_snprintf(szReturnString, sizeof(szReturnString), "cl_portalbase_portal_trace_filter_file %s\n", var.GetString());
+
+	//update filter data for all clients
+	for (int i = 1; i < gpGlobals->maxClients; i++)
+	{
+		engine->ClientCommand(UTIL_PlayerByIndex(i)->edict(), szReturnString);
+	}
+#else
+	Msg("Portal trace filter has been changed on client!\n");
+
+	//run on client
+	UTIL_Porta_LoadPortalTraceFilterList(var.GetString());
+#endif
 }
 
-ConVar portalbase_portal_trace_filter_file("portalbase_portal_trace_filter_file", "portalbase_portal_trace_filter",
+#ifndef CLIENT_DLL
+ConVar sv_portalbase_portal_trace_filter_file("sv_portalbase_portal_trace_filter_file", "portalbase_portal_trace_filter",
 	FCVAR_REPLICATED,
-	"Script file with classnames for portal trace filter to ignore.");
+	"Script file with classnames for portal trace filter to ignore on server.",
+	PortalbaseUpdatePortalTraceListChanged);
+#else
+ConVar cl_portalbase_portal_trace_filter_file("cl_portalbase_portal_trace_filter_file", "portalbase_portal_trace_filter",
+	FCVAR_SERVER_CAN_EXECUTE,
+	"Script file with classnames for portal trace filter to ignore on client.",
+	PortalbaseUpdatePortalTraceListChanged);
+#endif // !CLIENT_DLL
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Loads a list of passable entities for portal projectile.
