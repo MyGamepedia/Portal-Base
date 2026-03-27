@@ -158,11 +158,13 @@ CPortal_Player* CWeaponPortalBase::GetPortalPlayerOwner() const
 	
 void CWeaponPortalBase::OnDataChanged( DataUpdateType_t type )
 {
+	//boba
+	/*
 	int overrideModelIndex = CalcOverrideModelIndex();
 	if (overrideModelIndex != -1 && overrideModelIndex != GetModelIndex())
 	{
 		SetModelIndex(overrideModelIndex);
-	}
+	}*/
 
 	BaseClass::OnDataChanged( type );
 
@@ -199,6 +201,8 @@ int CWeaponPortalBase::DrawModel( int flags )
 
 bool CWeaponPortalBase::ShouldDraw( void )
 {
+	//boba
+	/*
 	if (m_iWorldModelIndex == 0)
 		return false;
 
@@ -249,6 +253,18 @@ bool CWeaponPortalBase::ShouldDraw( void )
 
 	// FIXME: We may want to only show active weapons on NPCs
 	// These are carried by AIs; always show them
+	return true;
+	*/
+
+	if (!GetOwner() || GetOwner() != C_BasePlayer::GetLocalPlayer())
+		return true;
+
+	if (!IsActiveByLocalPlayer())
+		return false;
+
+	//if ( GetOwner() && GetOwner() == C_BasePlayer::GetLocalPlayer() && materials->GetRenderTarget() == 0 )
+	//	return false;
+
 	return true;
 }
 
@@ -320,24 +336,19 @@ void CWeaponPortalBase::DrawCrosshair()
 	}
 }
 
-void CWeaponPortalBase::DoAnimationEvents( CStudioHdr *pStudioHdr )
+//-----------------------------------------------------------------------------
+// Purpose: This version doesn't let world model to play sound/anims/etc while also
+// not spaming in the console. Replaces Valve's hack. Fix by Devin (AI).
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+void CWeaponPortalBase::DoAnimationEvents(CStudioHdr* pStudioHdr)
 {
-	//HACK: Because this model renders view and world models in the same frame 
-	//it's using the wrong studio model when checking the sequences.
-	C_BasePlayer *pPlayer = UTIL_PlayerByIndex( 1 );
-	if ( pPlayer && pPlayer->GetActiveWeapon() == this )
-	{
-		C_BaseViewModel *pViewModel = pPlayer->GetViewModel();
-		if ( pViewModel )
-		{
-			pStudioHdr = pViewModel->GetModelPtr();
-		}
-	}
+	//Don't process animation events on the world model if
+	//the viewmodel is already handling them for the local player
+	C_BasePlayer* pPlayer = C_BasePlayer::GetLocalPlayer();
+	if (pPlayer && pPlayer->GetActiveWeapon() == this)
+		return;
 
-	if ( pStudioHdr )
-	{
-		return BaseClass::DoAnimationEvents( pStudioHdr );
-	}
 	BaseClass::DoAnimationEvents(pStudioHdr);
 }
 
@@ -407,12 +418,13 @@ void CWeaponPortalBase::Spawn()
 
 void CWeaponPortalBase::FireBullets(const FireBulletsInfo_t &info)
 {
-	//FireBulletsInfo_t modinfo = info;
+	FireBulletsInfo_t modinfo = info;
 
-	//modinfo.m_iPlayerDamage = GetWpnData().m_iPlayerDamage;
+	modinfo.m_iPlayerDamage = GetWpnData().m_iPlayerDamage;
 
 	BaseClass::FireBullets(info);
 }
+
 
 #if defined( CLIENT_DLL )
 

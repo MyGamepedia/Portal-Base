@@ -318,6 +318,8 @@ static ConCommand ent_create_portal_metal_sphere("ent_create_portal_metal_sphere
 #endif //} !CLIENT_DLL
 
 
+bool bLoadedPortalTraceByGamerules = false;
+
 //-----------------------------------------------------------------------------
 // Purpose: On starting a game, make global state changes specific to portal
 //-----------------------------------------------------------------------------
@@ -333,8 +335,9 @@ bool CPortalGameRules::Init()
 
 	//mygamepedia: HACK!? this connects func and convar so the engine doesn't complain about different func
 	//pointers, not sure if there is a better way but for our goals this will work well
-	//as if portalgun exists, that means gamerules proxy exists too
-	portalbase_portal_trace_filter_file.InstallChangeCallback(PortalbaseUpdatePortalTraceListChanged);
+	//as if portalgun exists, that means gamerules proxy exists too 
+	if (!bLoadedPortalTraceByGamerules)
+		portalbase_portal_trace_filter_file.InstallChangeCallback(PortalbaseUpdatePortalTraceListChanged);
 
 	return BaseClass::Init();
 }
