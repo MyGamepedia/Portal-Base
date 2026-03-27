@@ -102,6 +102,8 @@ public:
 		virtual void	DoAnimationEvents( CStudioHdr *pStudio );
 		virtual void	GetRenderBounds( Vector& theMins, Vector& theMaxs );
 
+		virtual int		CalcOverrideModelIndex();
+
 	#else
 
 		virtual void	Spawn();

@@ -157,19 +157,23 @@ CPortal_Player* CWeaponPortalBase::GetPortalPlayerOwner() const
 #ifdef CLIENT_DLL
 	
 void CWeaponPortalBase::OnDataChanged( DataUpdateType_t type )
-{
-	//boba
-	/*
+{	
 	int overrideModelIndex = CalcOverrideModelIndex();
 	if (overrideModelIndex != -1 && overrideModelIndex != GetModelIndex())
 	{
 		SetModelIndex(overrideModelIndex);
-	}*/
+	}
 
 	BaseClass::OnDataChanged( type );
 
 	if ( GetPredictable() && !ShouldPredict() )
 		ShutdownPredictable();
+}
+
+//todo: find out why it needs to be like this for the beams - mygamepedia
+int CWeaponPortalBase::CalcOverrideModelIndex()
+{
+	return GetWorldModelIndex();
 }
 
 int CWeaponPortalBase::DrawModel( int flags )
@@ -201,8 +205,6 @@ int CWeaponPortalBase::DrawModel( int flags )
 
 bool CWeaponPortalBase::ShouldDraw( void )
 {
-	//boba
-	/*
 	if (m_iWorldModelIndex == 0)
 		return false;
 
@@ -253,18 +255,6 @@ bool CWeaponPortalBase::ShouldDraw( void )
 
 	// FIXME: We may want to only show active weapons on NPCs
 	// These are carried by AIs; always show them
-	return true;
-	*/
-
-	if (!GetOwner() || GetOwner() != C_BasePlayer::GetLocalPlayer())
-		return true;
-
-	if (!IsActiveByLocalPlayer())
-		return false;
-
-	//if ( GetOwner() && GetOwner() == C_BasePlayer::GetLocalPlayer() && materials->GetRenderTarget() == 0 )
-	//	return false;
-
 	return true;
 }
 
