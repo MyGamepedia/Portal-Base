@@ -1,6 +1,6 @@
 "PortalTraceFilter"   //portal tracer filter
 {
-    "prop_physics" "" //class to ignore and "" to work properly
+    "prop_physics" "" //class to ignore, space and "" needed to work read the file properly
     "func_physbox" ""
     "npc_portal_turret_floor" ""
     "prop_energy_ball" ""
