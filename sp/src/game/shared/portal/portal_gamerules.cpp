@@ -331,6 +331,11 @@ bool CPortalGameRules::Init()
 	//mygamepedia: on game start, load portalgun tracer filter here
 	UTIL_Porta_LoadPortalTraceFilterList(portalbase_portal_trace_filter_file.GetString());
 
+	//mygamepedia: HACK!? this connects func and convar so the engine doesn't complain about different func
+	//pointers, not sure if there is a better way but for our goals this will work well
+	//as if portalgun exists, that means gamerules proxy exists too
+	portalbase_portal_trace_filter_file.InstallChangeCallback(PortalbaseUpdatePortalTraceListChanged);
+
 	return BaseClass::Init();
 }
 

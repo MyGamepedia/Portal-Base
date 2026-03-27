@@ -216,6 +216,9 @@ void CBaseCombatWeapon::Spawn( void )
 	SetRemoveable( false );
 
 	// Bloat the box for player pickup
+
+	//mygamepedia: we are using env_touch_area for items so the items are not triggers and pass portals, but also have
+	//the large player pickup area
 	if (!sv_portalbase_item_touch_area.GetBool())
 	{
 		CollisionProp()->UseTriggerBounds(true, 36);

@@ -175,7 +175,7 @@ Color UTIL_Portal_Color(int iPortal)
 // Purpose: Used by portalbase_update_portal_trace_list to refresh the list.
 // - MyGamepedia
 //-----------------------------------------------------------------------------
-static void PortalbaseUpdatePortalTraceListChanged(IConVar* pConVar, const char* pOldString, float flOldValue)
+void PortalbaseUpdatePortalTraceListChanged(IConVar* pConVar, const char* pOldString, float flOldValue)
 {
 	Msg("Portal trace filter has been changed!\n");
 	ConVarRef var(pConVar);
@@ -184,9 +184,7 @@ static void PortalbaseUpdatePortalTraceListChanged(IConVar* pConVar, const char*
 
 ConVar portalbase_portal_trace_filter_file("portalbase_portal_trace_filter_file", "portalbase_portal_trace_filter",
 	FCVAR_REPLICATED,
-	"Script file with classnames for portal trace filter to ignore.",
-	PortalbaseUpdatePortalTraceListChanged
-);
+	"Script file with classnames for portal trace filter to ignore.");
 
 //-----------------------------------------------------------------------------
 // Purpose: Loads a list of passable entities for portal projectile.

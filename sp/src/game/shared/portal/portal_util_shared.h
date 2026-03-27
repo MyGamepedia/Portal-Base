@@ -30,7 +30,7 @@ void UTIL_Portal_Trace_Filter( class CTraceFilterSimpleClassnameList *traceFilte
 
 void UTIL_Porta_LoadPortalTraceFilterList(const char* szFile);
 
-void CC_Portalbase_Update_Portal_Trace_List(const CCommand& args);
+void PortalbaseUpdatePortalTraceListChanged(IConVar* pConVar, const char* pOldString, float flOldValue);
 
 Color UTIL_Portal_Color(int iPortal);
 
