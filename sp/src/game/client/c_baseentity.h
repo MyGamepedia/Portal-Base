@@ -1002,6 +1002,7 @@ public:
 	virtual bool					IsPlayer( void ) const { return false; };
 	virtual bool					IsBaseDoor() { return false; } //true for doors
 	virtual bool					IsPortalGun() { return false; } //true for weapon_portalgun
+	virtual bool					IsPhyscannon() { return false; } //true for weapon_physcannon
 	virtual bool					IsItem() { return false; } //true for CItem
 	virtual bool					IsBaseCombatCharacter( void ) { return false; };
 	virtual C_BaseCombatCharacter	*MyCombatCharacterPointer( void ) { return NULL; }

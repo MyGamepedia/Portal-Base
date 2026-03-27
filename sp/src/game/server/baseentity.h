@@ -949,6 +949,7 @@ public:
 	virtual bool	IsCrossbowBolt() { return false; } //true for crossbow_bolt
 	virtual bool	IsBaseDoor() { return false; }	//true for doors
 	virtual bool	IsPortalGun() { return false; } //true for weapon_portalgun
+	virtual bool	IsPhyscannon() { return false; } //true for weapon_physcannon
 	virtual bool	IsItem() { return false; } //true for CItem
 	virtual bool	IsPortalNonTeleportable() { return false; } //replaces hardcoded compare by str g_pszPortalNonTeleportable with per class bool
 	virtual bool	IsNetClient( void ) const { return false; }

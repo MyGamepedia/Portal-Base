@@ -22,6 +22,7 @@
 #include "physicsshadowclone.h"
 #include "particle_parse.h"
 #include "rumble_shared.h"
+#include "items.h"
 
 
 #define BLAST_SPEED_NON_PLAYER 1000.0f
@@ -78,6 +79,7 @@ PRECACHE_WEAPON_REGISTER(weapon_portalgun);
 
 extern ConVar sv_portal_placement_debug;
 extern ConVar sv_portal_placement_never_fail;
+extern ConVar sv_portalbase_item_touch_area;
 ConVar beta_quickinfo_show_portal_delay("beta_quickinfo_show_portal_delay", "1", FCVAR_REPLICATED | FCVAR_ARCHIVE);
 ConVar sv_portal_projectile_delay("sv_portal_projectile_delay", "0.5", FCVAR_REPLICATED | FCVAR_ARCHIVE, "Maximum delay after firing and before portal is placed. If set to a very high number behaviour will be the same as in normal Portal.");
 ConVar allow_portalgun_lowering_anim("allow_portalgun_lowering_anim", "0", FCVAR_GAMEDLL | FCVAR_ARCHIVE | FCVAR_REPLICATED, "Allows lowering animation (animation when you look at npc's) to play)");
@@ -87,6 +89,18 @@ void CWeaponPortalgun::Spawn( void )
 	Precache();
 
 	BaseClass::Spawn();
+
+	//mygamepedia: this is moved from BasePortalWeapon for hl2 weapons proper size
+	if (!sv_portalbase_item_touch_area.GetBool())
+	{
+		// Use less bloat for the collision box for this weapon. (bug 43800)
+		CollisionProp()->UseTriggerBounds(true, 20);
+	}
+	else
+	{
+		if (m_hTouchArea.Get())
+			static_cast<CEnvTouchArea*>(m_hTouchArea.Get())->CollisionProp()->UseTriggerBounds(true, 20);
+	}
 
 	SetThink( &CWeaponPortalgun::Think );
 	SetNextThink( gpGlobals->curtime + 0.1 );

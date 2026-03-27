@@ -489,9 +489,23 @@ void CBaseCombatWeapon::FallInit( void )
 	if (!sv_portalbase_item_touch_area.GetBool())
 		iSolidFlag |= FSOLID_TRIGGER;
 
-	if ( !VPhysicsInitNormal( SOLID_BBOX, iSolidFlag, false ) )
+	IPhysicsObject* pPhysObj = NULL;
+
+	if (!sv_portalbase_item_touch_area.GetBool())
 	{
-		SetMoveType( MOVETYPE_FLYGRAVITY );
+		pPhysObj = VPhysicsInitNormal(SOLID_BBOX, iSolidFlag, false);
+	}
+	else
+		pPhysObj = VPhysicsInitNormal(SOLID_VPHYSICS, iSolidFlag, false);
+
+	if (!pPhysObj)
+	{
+		if (!sv_portalbase_item_touch_area.GetBool())
+		{
+			SetMoveType(MOVETYPE_FLYGRAVITY);
+		}
+		else
+			SetMoveType(MOVETYPE_VPHYSICS);
 
 		if (!sv_portalbase_item_touch_area.GetBool())
 		{
@@ -595,7 +609,14 @@ void CBaseCombatWeapon::Materialize( void )
 #ifdef HL2MP
 	if ( HasSpawnFlags( SF_NORESPAWN ) == false )
 	{
-		VPhysicsInitNormal( SOLID_BBOX, GetSolidFlags() | FSOLID_TRIGGER, false );
+		SolidType_t iType = (!sv_portalbase_item_touch_area.GetBool()) ? SOLID_BBOX : SOLID_VPHYSICS;
+
+		int iSolidFlags = GetSolidFlags();
+
+		if (!sv_portalbase_item_touch_area.GetBool())
+			iSolidFlags |= FSOLID_TRIGGER;
+
+		VPhysicsInitNormal(iType, iSolidFlags, false );
 		SetMoveType( MOVETYPE_VPHYSICS );
 
 		HL2MPRules()->AddLevelDesignerPlacedObject( this );

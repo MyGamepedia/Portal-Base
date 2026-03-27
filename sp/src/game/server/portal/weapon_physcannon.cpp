@@ -47,6 +47,7 @@
 // NVNT haptic utils
 #include "haptics/haptic_utils.h"
 #include "npc_security_camera.h"
+#include "items.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -71,6 +72,7 @@ ConVar physcannon_dmg_glass( "physcannon_dmg_glass", "15" );
 
 extern ConVar hl2_normspeed;
 extern ConVar hl2_walkspeed;
+extern ConVar sv_portalbase_item_touch_area;
 
 #define PHYSCANNON_BEAM_SPRITE "sprites/orangelight1.vmt"
 #define PHYSCANNON_GLOW_SPRITE "sprites/glow04_noz.vmt"
@@ -1397,6 +1399,8 @@ public:
 
 	virtual float GetMaxAutoAimDeflection() { return 0.90f; }
 
+	virtual bool	IsPhyscannon() { return true; }
+
 	void	ForceDrop( void );
 	bool	DropIfEntityHeld( CBaseEntity *pTarget );	// Drops its held entity if it matches the entity passed in
 	CGrabController &GetGrabController() { return m_grabController; }
@@ -1683,7 +1687,14 @@ void CWeaponPhysCannon::Spawn( void )
 	BaseClass::Spawn();
 
 	// Need to get close to pick it up
-	CollisionProp()->UseTriggerBounds( false );
+	//mygamepedia: reworked under new touch system, want to note that it also fixes bbox rotation
+	//so it is also more accurate
+	if (!sv_portalbase_item_touch_area.GetBool())
+	{
+		CollisionProp()->UseTriggerBounds(false);
+	}
+	else if (m_hTouchArea.Get())
+		static_cast<CEnvTouchArea*>(m_hTouchArea.Get())->CollisionProp()->UseTriggerBounds(false);
 
 	m_bPhyscannonState = IsMegaPhysCannon();
 
@@ -3347,7 +3358,13 @@ void CWeaponPhysCannon::WaitForUpgradeThink()
 	StopSound( "WeaponDissolve.Charge" );
 
 	// Re-enable weapon pickup
-	AddSolidFlags( FSOLID_TRIGGER );
+	//mygamepedia: reworked under new touch system
+	if (!sv_portalbase_item_touch_area.GetBool())
+	{
+		AddSolidFlags(FSOLID_TRIGGER);
+	}
+	else if (m_hTouchArea.Get())
+		static_cast<CEnvTouchArea*>(m_hTouchArea.Get())->EnableTouchArea();
 
 	SetContextThink( NULL, gpGlobals->curtime, s_pWaitForUpgradeContext );
 }

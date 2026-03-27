@@ -19,6 +19,7 @@ extern IVModelInfoClient* modelinfo;
 extern IVModelInfo* modelinfo;
 #endif
 
+extern ConVar sv_portalbase_item_touch_area;
 
 #if defined( CLIENT_DLL )
 
@@ -108,7 +109,9 @@ static inline bool ShouldDrawLocalPlayerViewModel(void)
 CWeaponPortalBase::CWeaponPortalBase()
 {
 	SetPredictionEligible( true );
-	AddSolidFlags( FSOLID_TRIGGER ); // Nothing collides with these but it gets touches.
+
+	if (!sv_portalbase_item_touch_area.GetBool())
+		AddSolidFlags( FSOLID_TRIGGER ); // Nothing collides with these but it gets touches.
 
 	m_flNextResetCheckTime = 0.0f;
 }
@@ -399,12 +402,6 @@ void CWeaponPortalBase::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 void CWeaponPortalBase::Spawn()
 {
 	BaseClass::Spawn();
-
-	// Set this here to allow players to shoot dropped weapons
-	SetCollisionGroup(COLLISION_GROUP_WEAPON);
-
-	// Use less bloat for the collision box for this weapon. (bug 43800)
-	CollisionProp()->UseTriggerBounds(true, 20);
 }
 #endif
 
