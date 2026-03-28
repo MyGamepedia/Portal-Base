@@ -434,15 +434,11 @@ int CWeaponSMG1::WeaponRangeAttack2Condition()
 {
 	CAI_BaseNPC *npcOwner = GetOwner()->MyNPCPointer();
 
-	return COND_NONE;
-
-/*
 	// --------------------------------------------------------
 	// Assume things haven't changed too much since last time
 	// --------------------------------------------------------
 	if (gpGlobals->curtime < m_flNextGrenadeCheck )
-		return m_lastGrenadeCondition;
-*/
+		return COND_NONE;
 
 	// -----------------------
 	// If moving, don't check.
