@@ -80,4 +80,7 @@
     "item_battery" ""
     "item_crate" ""
     "npc_bullseye" ""
+	"item_item_crate" ""
+	"item_healthkit" ""
+	"item_healthvial" ""
 }

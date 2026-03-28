@@ -189,9 +189,11 @@ void PortalbaseUpdatePortalTraceListChanged(IConVar* pConVar, const char* pOldSt
 	Q_snprintf(szReturnString, sizeof(szReturnString), "cl_portalbase_portal_trace_filter_file %s\n", var.GetString());
 
 	//update filter data for all clients
-	for (int i = 1; i < gpGlobals->maxClients; i++)
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
-		engine->ClientCommand(UTIL_PlayerByIndex(i)->edict(), szReturnString);
+		CBaseEntity* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer)
+			engine->ClientCommand(pPlayer->edict(), szReturnString);
 	}
 #else
 	Msg("Portal trace filter has been changed on client!\n");

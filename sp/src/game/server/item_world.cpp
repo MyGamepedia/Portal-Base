@@ -456,9 +456,12 @@ bool CItem::ItemCanBeTouchedByPlayer( CBasePlayer *pPlayer )
 //-----------------------------------------------------------------------------
 void CItem::ItemTouch( CBaseEntity *pOther )
 {
-	//mygamepedia: don't run touch checks that we run in touch area
+	//mygamepedia: don't run touch checks that we run in touch area, unless disabled
 	if (!sv_portalbase_item_touch_area.GetBool())
 	{
+		if (!pOther)
+			return;
+
 		// Vehicles can touch items + pick them up
 		if (pOther->GetServerVehicle())
 		{
@@ -472,7 +475,7 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 			return;
 	}
 
-	CBasePlayer *pPlayer = (CBasePlayer *)pOther;
+	CBasePlayer *pPlayer = static_cast<CBasePlayer*>(pOther);
 
 	// Must be a valid pickup scenario (no blocking). Though this is a more expensive
 	// check than some that follow, this has to be first Obecause it's the only one
@@ -754,6 +757,9 @@ void CEnvTouchArea::ClearPickupObject()
 //-----------------------------------------------------------------------------
 void CEnvTouchArea::ItemTouch(CBaseEntity* pOther)
 {
+	if (!pOther)
+		return;
+
 	//nothing
 	if (m_iPickupType == PUT_Nothing)
 		return;
