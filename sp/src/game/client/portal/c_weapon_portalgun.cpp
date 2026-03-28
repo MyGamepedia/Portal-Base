@@ -208,6 +208,8 @@ void C_WeaponPortalgun::Spawn( void )
 void C_WeaponPortalgun::StartEffects( void )
 {
 	CBasePlayer* pOwner = ToBasePlayer(GetOwner());
+
+	//todo: add a proper logic for NPCs when we will have working code for their portalgun
 	if (pOwner == NULL)
 		return;
 

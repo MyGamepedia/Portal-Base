@@ -164,7 +164,7 @@ bool CEnvProjectedTexture::KeyValue( const char *szKeyName, const char *szValue 
 	}
 	else if (FStrEq(szKeyName, "texturename"))
 	{
-		Q_strcpy(m_SpotlightTextureName.GetForModify(), szValue);
+		Q_strncpy(m_SpotlightTextureName.GetForModify(), szValue, MAX_PATH);
 	}
 	else
 	{
@@ -247,7 +247,10 @@ void CEnvProjectedTexture::InitialThink(void)
 	if (m_hTargetEntity == NULL && m_target != NULL_STRING)
 		m_hTargetEntity = gEntList.FindEntityByName(NULL, m_target);
 	if (m_hTargetEntity == NULL)
+	{
+		SetNextThink(gpGlobals->curtime + 0.1);
 		return;
+	}
 
 	Vector vecToTarget = (m_hTargetEntity->GetAbsOrigin() - GetAbsOrigin());
 	QAngle vecAngles;

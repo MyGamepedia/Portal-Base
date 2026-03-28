@@ -101,7 +101,9 @@ ConVar r_flashlightdepthres( "r_flashlightdepthres", "1024" );
 
 ConVar r_threaded_client_shadow_manager( "r_threaded_client_shadow_manager", "0" );
 
-ConVar r_portalbase_max_shadowmaps("r_portalbase_max_shadowmaps", "10");
+ConVar r_portalbase_max_shadowmaps("r_portalbase_max_shadowmaps", "48", 
+	FCVAR_NONE, 
+	"Max shadowmap slots for projected textures.", true, 0, true, 99);
 
 #ifdef _WIN32
 #pragma warning( disable: 4701 )
@@ -1374,7 +1376,7 @@ void CClientShadowMgr::InitDepthTextureShadows()
 			bool bFalse = false;
 
 			char strRTName[64];
-			sprintf(strRTName, "_rt_ShadowDepthTexture_%d", i);
+			Q_snprintf(strRTName, sizeof(strRTName), "_rt_ShadowDepthTexture_%d", i);
 
 #if defined( _X360 )
 			// create a render target to use as a resolve target to get the shared depth buffer
@@ -2638,7 +2640,10 @@ void CClientShadowMgr::BuildFlashlight( ClientShadowHandle_t handle )
 	CalculateAABBFromProjectionMatrix(shadow.m_WorldToShadow, &mins, &maxs);
 
 	if (engine->CullBox(mins, maxs))
+	{
+		shadowmgr->ProjectFlashlight(shadow.m_ShadowHandle, shadow.m_WorldToShadow, 0, NULL);
 		return;
+	}
 
 	bool bLightModels = r_flashlightmodels.GetBool();
 	bool bLightSpecificEntity = shadow.m_hTargetEntity.Get() != NULL;
