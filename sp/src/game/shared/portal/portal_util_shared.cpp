@@ -25,7 +25,7 @@
 
 bool g_bAllowForcePortalTrace = false;
 bool g_bForcePortalTrace = false;
-bool g_bBulletPortalTrace = true; // makes metrocops shoot through portals (sometimes)
+bool g_bBulletPortalTrace = true; // makes metrocops shoot through portals (sometimes) 
 
 static CUtlVector<CUtlString> g_PortalTraceIgnoreList;
 
@@ -761,6 +761,17 @@ void UTIL_Portal_TraceRay( const CProp_Portal *pPortal, const Ray_t &ray, unsign
 		{
 			physcollision->TraceBox( ray, portalSimulator.m_DataAccess.Simulation.Static.World.Brushes.pCollideable, vec3_origin, vec3_angle, pTrace );
 			bCopyBackBrushTraceData = true;
+		}
+		
+		if (portalSimulator.m_DataAccess.Simulation.Static.World.Brushes.pDisCollideable && sv_portal_trace_vs_world.GetBool())
+		{
+			physcollision->TraceBox(ray, portalSimulator.m_DataAccess.Simulation.Static.World.Brushes.pDisCollideable, vec3_origin, vec3_angle, &TempTrace);
+
+			if (TempTrace.fraction < pTrace->fraction) // we trace against displacements after we traced against brushes and replace original trace if we get shorter trace
+			{
+				*pTrace = TempTrace;
+				bCopyBackBrushTraceData = true;
+			}
 		}
 
 		if( bTraceHolyWall )
