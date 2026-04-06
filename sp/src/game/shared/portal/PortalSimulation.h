@@ -3,7 +3,7 @@
 // Purpose: Provides structures and classes necessary to simulate a portal.
 //
 // $NoKeywords: $
-//=====================================================================================// 
+//=====================================================================================//
 
 #ifndef PORTALSIMULATION_H
 #define PORTALSIMULATION_H
@@ -115,10 +115,9 @@ struct PS_SD_Static_World_Brushes_t
 {
 	CUtlVector<CPolyhedron *> Polyhedrons; //the building blocks of more complex collision
 	CPhysCollide *pCollideable;
-	CPhysCollide *pDisCollideable;
 #ifndef CLIENT_DLL
 	IPhysicsObject *pPhysicsObject;
-	PS_SD_Static_World_Brushes_t() : pCollideable(NULL), pDisCollideable(NULL), pPhysicsObject(NULL) {};
+	PS_SD_Static_World_Brushes_t() : pCollideable(NULL), pPhysicsObject(NULL) {};
 #else
 	PS_SD_Static_World_Brushes_t() : pCollideable(NULL) {};
 #endif
