@@ -20,6 +20,7 @@
 #include "AI_Criteria.h"
 #include "ragdoll_shared.h"
 #include "hierarchy.h"
+#include "death_pose.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -166,6 +167,15 @@ void CRagdollProp::Spawn( void )
 	SetModel( STRING( GetModelName() ) );
 
 	CStudioHdr *pStudioHdr = GetModelPtr( );
+
+	//mygamepedia: prevents crash when no model for this ent
+	if (!pStudioHdr)
+	{
+		Warning("prop_ragdoll at %.0f %.0f %0.f missing modelname\n", GetAbsOrigin().x, GetAbsOrigin().y, GetAbsOrigin().z);
+		UTIL_Remove(this);
+		return;
+	}
+
 	if ( pStudioHdr->flags() & STUDIOHDR_FLAGS_NO_FORCED_FADE )
 	{
 		DisableAutoFade();
@@ -191,6 +201,7 @@ void CRagdollProp::Spawn( void )
 	m_lastUpdateTickCount = 0;
 	m_flBlendWeight = 0.0f;
 	m_nOverlaySequence = -1;
+	m_flModelScale = 1.0; //mygamepedia: prevent physics crash on save restore if this thing set for me somehow
 
 	// Unless specified, do not allow this to be dissolved
 	if ( HasSpawnFlags( SF_RAGDOLLPROP_ALLOW_DISSOLVE ) == false )
@@ -233,6 +244,7 @@ void CRagdollProp::OnSave( IEntitySaveUtils *pUtils )
 
 void CRagdollProp::OnRestore()
 {
+	m_flModelScale = 1.0; //mygamepedia: prevent physics crash
 	// rebuild element 0 since it isn't saved
 	// NOTE: This breaks the rules - the pointer needs to get fixed in Restore()
 	m_ragdoll.list[0].pObject = VPhysicsGetObject();
@@ -682,7 +694,7 @@ void CRagdollProp::SetOverlaySequence( Activity activity )
 	}
 }
 
-void CRagdollProp::InitRagdoll( const Vector &forceVector, int forceBone, const Vector &forcePos, matrix3x4_t *pPrevBones, matrix3x4_t *pBoneToWorld, float dt, int collisionGroup, bool activateRagdoll, bool bWakeRagdoll )
+void CRagdollProp::InitRagdoll(const Vector& forceVector, int forceBone, const Vector& forcePos, matrix3x4_t* pPrevBones, matrix3x4_t* pBoneToWorld, float dt, int collisionGroup, bool activateRagdoll, bool bWakeRagdoll, bool bDeathPose)
 {
 	SetCollisionGroup( collisionGroup );
 
@@ -705,6 +717,7 @@ void CRagdollProp::InitRagdoll( const Vector &forceVector, int forceBone, const 
 	params.forceVector = forceVector;
 	params.forceBoneIndex = forceBone;
 	params.forcePosition = forcePos;
+	params.pCurrentBones = bDeathPose ? pPrevBones : pBoneToWorld;
 	params.pCurrentBones = pBoneToWorld;
 	params.jointFrictionScale = 1.0;
 	params.allowStretch = HasSpawnFlags(SF_RAGDOLLPROP_ALLOW_STRETCH);
@@ -956,6 +969,15 @@ void CRagdollProp::Teleport( const Vector *newPosition, const QAngle *newAngles,
 	// we need to call the base class and it will teleport our vphysics object, 
 	// so set object 0 up and compute the origin/angles for its new position (base implementation has side effects)
 	VPhysicsSwapObject( m_ragdoll.list[0].pObject );
+
+	//mygamepedia: save from crash with missing models
+	if (!m_ragdoll.list[0].pObject)
+	{
+		Warning("CRagdollProp::Teleport: NULLPRT IN m_ragdoll.list[0].pObject! The ragdoll model is missing?! REMOVED!!!\n");
+		UTIL_Remove(this);
+		return;
+	}
+
 	matrix3x4_t obj0source, obj0Target;
 	m_ragdoll.list[0].pObject->GetPositionMatrix( &obj0source );
 	ConcatTransforms( xform, obj0source, obj0Target );
@@ -1354,6 +1376,48 @@ CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, con
 
 	float fPreviousCycle = clamp(pAnimating->GetCycle()-( dt * ( 1 / fSequenceDuration ) ),0.f,1.f);
 	float fCurCycle = pAnimating->GetCycle();
+
+	int deathpose = ACT_INVALID;
+	int deathframe = 0;
+	if (pAnimating->IsNPC())
+	{
+		CAI_BaseNPC* npc = (CAI_BaseNPC*)pAnimating;
+		if (npc)
+		{
+			deathpose = Activity(npc->GetDeathPose());
+			deathframe = npc->GetDeathPoseFrame();
+		}
+	}
+
+	if (deathpose != ACT_INVALID)
+	{
+		int currentSequence = pAnimating->GetSequence();
+
+		//Force pAnimating to position the deathpose
+		pAnimating->SetSequence(deathpose);
+		pAnimating->SetCycle((float)deathframe / MAX_DEATHPOSE_FRAMES);
+
+		//Store the position
+		pAnimating->SetupBones(pBoneToWorldNext, BONE_USED_BY_ANYTHING);
+
+		//Restore the current sequence and cycle
+		pAnimating->SetSequence(currentSequence);
+
+		pAnimating->SetCycle(fCurCycle);
+		pAnimating->SetupBones(pBoneToWorld, BONE_USED_BY_ANYTHING);
+	}
+
+	else
+	{
+		// Get current bones positions
+		pAnimating->SetupBones(pBoneToWorldNext, BONE_USED_BY_ANYTHING);
+		// Get previous bones positions
+		pAnimating->SetCycle(fPreviousCycle);
+		pAnimating->SetupBones(pBoneToWorld, BONE_USED_BY_ANYTHING);
+		// Restore current cycle
+		pAnimating->SetCycle(fCurCycle);
+	}
+
 	// Get current bones positions
 	pAnimating->SetupBones( pBoneToWorldNext, BONE_USED_BY_ANYTHING );
 	// Get previous bones positions
@@ -1435,7 +1499,7 @@ CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, con
 	}
 	else
 	{
-		pRagdoll->InitRagdoll( info.GetDamageForce(), forceBone, info.GetDamagePosition(), pBoneToWorld, pBoneToWorldNext, dt, collisionGroup, true );
+		pRagdoll->InitRagdoll(info.GetDamageForce(), forceBone, info.GetDamagePosition(), pBoneToWorld, pBoneToWorldNext, dt, collisionGroup, true, true, deathpose != ACT_INVALID);
 	}
 
 	// Are we dissolving?
@@ -1655,6 +1719,15 @@ void CRagdollProp::GetAngleOverrideFromCurrentState( char *pOut, int size )
 		CFmtStr str("%d,%.2f %.2f %.2f", i, m_ragAngles[i].x, m_ragAngles[i].y, m_ragAngles[i].z );
 		Q_strncat( pOut, str, size, COPY_ALL_CHARACTERS );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Server ragdolls cause physics crash on save restore with model scale, prevent.
+// - MyGamepedia
+//-----------------------------------------------------------------------------
+void CRagdollProp::SetModelScale(float scale, float change_duration /*= 0.0f*/)
+{
+	return;
 }
 
 void CRagdollProp::DisableMotion( void )

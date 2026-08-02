@@ -2672,18 +2672,24 @@ int CHL2_Player::GiveAmmo( int nCount, int nAmmoIndex, bool bSuppressSound)
 	return nAdd;
 }
 
+ConVar sv_portalbase_use_stunstick_for_battery("sv_portalbase_stunstick_pickup_mode", "0",
+	FCVAR_NONE,
+	"Used to debug melee weapon tracer. 0 - use only for armor. 1 - use only for weapon pick up. 2 - armor charge only if owned stunstick.",
+	true, 0.0, true, 2.0);
+
 //-----------------------------------------------------------------------------
+// Purpose: Allow stunstick by player touch if convar allow for tests. - MyGamepedia
 //-----------------------------------------------------------------------------
 bool CHL2_Player::Weapon_CanUse( CBaseCombatWeapon *pWeapon )
 {
-#ifndef HL2MP	
-	if ( pWeapon->ClassMatches( "weapon_stunstick" ) )
+	if ((pWeapon->ClassMatches("weapon_stunstick") && sv_portalbase_use_stunstick_for_battery.GetInt() == 0) ||
+		(Weapon_OwnsThisType("weapon_stunstick") && sv_portalbase_use_stunstick_for_battery.GetInt() == 2))
 	{
-		if ( ApplyBattery( 0.5 ) )
-			UTIL_Remove( pWeapon );
+		if (ApplyBattery(0.5))
+			UTIL_Remove(pWeapon);
+
 		return false;
 	}
-#endif
 
 	return BaseClass::Weapon_CanUse( pWeapon );
 }
@@ -3166,8 +3172,7 @@ bool CHL2_Player::Weapon_CanSwitchTo( CBaseCombatWeapon *pWeapon )
 //MyGamepedia: the same idea as with gravity gun
 ConVar sv_portalgun_fire_delay_prevents_pickup("sv_portalgun_fire_delay_prevents_pickup", "1",
 	FCVAR_REPLICATED,
-	"The player will not be able to pick up anything if portal device is under attack delay (caused by certain animations), 1 to enable.",
-	true, 0, true, 1);
+	"The player will not be able to pick up anything if portal device is under attack delay (caused by certain animations), 1 to enable.");
 
 void CHL2_Player::PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize )
 {

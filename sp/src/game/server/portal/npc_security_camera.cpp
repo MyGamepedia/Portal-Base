@@ -87,6 +87,7 @@ CNPC_SecurityCamera::CNPC_SecurityCamera( void )
 	m_flLastSight		= 0;
 	m_bBlinkState		= false;
 	m_bEnabled			= false;
+	m_bDetached			= false;
 	m_vecCurrentAngles	= QAngle( 0.0f, 0.0f, 0.0f );
 
 	m_vecGoalAngles.Init();
@@ -170,7 +171,7 @@ void CNPC_SecurityCamera::Spawn( void )
 	SetCollisionBounds( Vector( -2.5f, -18.0f, -32.0f ), Vector( 42.0f, 18.0f, 16.0f ) );
 
 	RemoveFlag( FL_AIMTARGET );
-	AddEFlags( EFL_NO_DISSOLVE );
+	AddEFlags(EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL); //mygamepedia: the second flag prevents bugs with megaphyscannon
 
 	SetPoseParameter( SECURITY_CAMERA_BC_YAW, 0 );
 	SetPoseParameter( SECURITY_CAMERA_BC_PITCH, 0 );
@@ -286,7 +287,7 @@ int CNPC_SecurityCamera::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	//mygamepedia: detach if
 	//is not detached, damage is > 49, feature enabled
 	float flVarVal = sk_securitycamera_detach_by_damage.GetFloat();
-	if  (!m_bDetached && flVarVal > -1 && info.GetDamage() > -1 && info.GetDamage() >= flVarVal)
+	if  (!m_bDetached && flVarVal > -1 && info.GetDamage() >= flVarVal)
 	{
 		variant_t tmpvar;
 		AcceptInput("Ragdoll",

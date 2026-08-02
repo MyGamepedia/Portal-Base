@@ -4,11 +4,12 @@
 //
 //===========================================================================//
 
-#include "rope.h"
-
 
 #ifndef SECURITYCAMERA_SEVER_H
 #define SECURITYCAMERA_SEVER_H
+
+#include "rope.h"
+
 #ifdef _WIN32
 #pragma once
 #endif
